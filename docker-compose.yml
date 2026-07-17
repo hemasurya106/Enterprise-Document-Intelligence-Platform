@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # Redis - Used as Celery broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - rag-network
+
+  # FastAPI Application
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
+      - CELERY_LOG_LEVEL=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./known_documents:/app/known_documents
+      - ./temp_files:/app/temp_files
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rag-network
+
+  # Celery Worker - Processes async tasks
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-celery-worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
+      - CELERY_LOG_LEVEL=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./known_documents:/app/known_documents
+      - ./temp_files:/app/temp_files
+    command: >
+      celery -A app.celery_app worker
+      --loglevel=info
+      --concurrency=2
+      --time-limit=3600
+      --soft-time-limit=3300
+    networks:
+      - rag-network
+    restart: unless-stopped
+
+  # Celery Beat - Schedules periodic tasks
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-celery-beat
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
+      - CELERY_LOG_LEVEL=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./known_documents:/app/known_documents
+      - ./temp_files:/app/temp_files
+      - celery_beat_schedule:/app/celery_beat_schedule
+    command: >
+      celery -A app.celery_app beat
+      --loglevel=info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    networks:
+      - rag-network
+    restart: unless-stopped
+
+  # Flower - Celery monitoring UI (optional)
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-flower
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A app.celery_app flower --port=5555
+    networks:
+      - rag-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  celery_beat_schedule:
+
+networks:
+  rag-network:
+    driver: bridge
