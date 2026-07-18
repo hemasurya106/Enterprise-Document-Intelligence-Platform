@@ -35,3 +35,13 @@ python-pptx>=1.0.2
 celery[redis]>=5.5.3
 redis>=6.2.0
 flower>=2.0.1
+
+# --- Supabase Auth ---
+PyJWT>=2.9.0          # JWT decode + HS256 verification (Supabase JWTs)
+supabase>=2.9.0       # Python client — server-side only (user_profiles upsert)
+
+# --- production hardening (no new packages needed) ---
+# Rate limiting  → redis (already above) — sliding-window via INCR+EXPIRE
+# Structured JSON logging → stdlib logging + json (no structlog needed)
+# Circuit breaker → stdlib threading + concurrent.futures (no tenacity needed)
+# Health check    → redis + celery[redis] (already above)

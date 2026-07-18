@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Document Intelligence Platform</title>
+  <meta name="description" content="Upload and query documents using AI-powered RAG pipeline with Google authentication." />
+
+  <!-- Supabase JS via CDN (no build step required) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d0f14;
+      --surface:     #161922;
+      --surface2:    #1e2230;
+      --border:      #2a2f3f;
+      --accent:      #6366f1;
+      --accent-soft: #4f51c7;
+      --accent-glow: rgba(99,102,241,.25);
+      --green:       #22c55e;
+      --red:         #ef4444;
+      --amber:       #f59e0b;
+      --text:        #e8eaf0;
+      --muted:       #6b7280;
+      --radius:      12px;
+      --transition:  .2s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      width: 100%;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.05rem;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -.02em;
+    }
+
+    #user-pill {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    #user-pill img {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      object-fit: cover;
+    }
+    #user-pill .name { color: var(--text); font-weight: 500; }
+
+    /* ── Main layout ─────────────────────────────────────── */
+    main {
+      width: 100%;
+      max-width: 760px;
+      padding: 3rem 1.5rem 5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .card:hover { border-color: #3a405a; }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .card-title .icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: .9rem;
+    }
+
+    /* ── Login panel ─────────────────────────────────────── */
+    #login-panel {
+      text-align: center;
+      padding: 3.5rem 2rem;
+    }
+    #login-panel h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e8eaf0 0%, #9ca3af 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: .5rem;
+    }
+    #login-panel p {
+      color: var(--muted);
+      font-size: .92rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn-google {
+      display: inline-flex;
+      align-items: center;
+      gap: .75rem;
+      background: #fff;
+      color: #1f1f1f;
+      font-weight: 600;
+      font-size: .95rem;
+      padding: .8rem 1.6rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .btn-google:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    }
+    .btn-google:active { transform: translateY(0); }
+    .btn-google svg { flex-shrink: 0; }
+
+    /* ── App panel ───────────────────────────────────────── */
+    #app-panel { display: none; flex-direction: column; gap: 2rem; }
+
+    /* greeting */
+    .greeting {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .greeting span { color: var(--accent); }
+
+    /* ── Inputs / buttons ─────────────────────────────────── */
+    label {
+      display: block;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: .4rem;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .7rem 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: .9rem;
+      padding: .7rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    .btn-primary:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .85rem;
+      padding: .45rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+    /* ── Status badge ─────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 600;
+      padding: .25rem .6rem;
+      border-radius: 999px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .badge-pending  { background: rgba(245,158,11,.12); color: var(--amber); }
+    .badge-progress { background: rgba(99,102,241,.15); color: #818cf8; }
+    .badge-success  { background: rgba(34,197,94,.12);  color: var(--green); }
+    .badge-failure  { background: rgba(239,68,68,.12);  color: var(--red); }
+
+    /* ── Job card ─────────────────────────────────────────── */
+    .job-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .75rem 1rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: .85rem;
+      animation: slide-in .25s ease;
+    }
+    .job-id { font-family: monospace; color: var(--muted); font-size: .78rem; }
+    .job-url { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+    #jobs-list { display: flex; flex-direction: column; gap: .5rem; }
+    #jobs-empty { color: var(--muted); font-size: .88rem; text-align: center; padding: 1.5rem 0; }
+
+    /* ── Progress bar ─────────────────────────────────────── */
+    .progress-bar-track {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: .4rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a855f7);
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+
+    /* ── Spinner ─────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem 1.25rem;
+      font-size: .875rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      max-width: 320px;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error  { border-left: 3px solid var(--red); }
+    #toast.success { border-left: 3px solid var(--green); }
+
+    /* ── Animations ──────────────────────────────────────── */
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+      50%       { box-shadow: 0 0 0 8px transparent; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ───────────────────────────────────────────────── -->
+<nav>
+  <span class="logo">⚡ DocIntel</span>
+  <div id="user-pill" style="display:none;">
+    <img id="nav-avatar" src="" alt="avatar" />
+    <span class="name" id="nav-name"></span>
+    <button class="btn-ghost" id="btn-logout">Sign out</button>
+  </div>
+</nav>
+
+<!-- ── Main ──────────────────────────────────────────────── -->
+<main>
+
+  <!-- Login panel (shown when signed out) -->
+  <div class="card" id="login-panel">
+    <h1>Document Intelligence</h1>
+    <p>Upload PDFs, Word docs, spreadsheets and ask questions powered by RAG + Gemini.</p>
+    <button class="btn-google" id="btn-signin">
+      <!-- Google "G" logo -->
+      <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+        <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+        <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+        <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+      </svg>
+      Sign in with Google
+    </button>
+  </div>
+
+  <!-- App panel (shown when signed in) -->
+  <div id="app-panel">
+
+    <!-- Greeting -->
+    <div class="card" style="padding:1.5rem 2rem;">
+      <div class="greeting">Welcome back, <span id="greeting-name">there</span> 👋</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:.3rem;" id="greeting-email"></div>
+    </div>
+
+    <!-- Upload card -->
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(99,102,241,.15);">📄</div>
+        Upload Document
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div>
+          <label for="doc-url">Document URL</label>
+          <input type="url" id="doc-url" placeholder="https://example.com/policy.pdf" />
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center;">
+          <button class="btn-primary" id="btn-upload">
+            <span id="upload-label">Upload &amp; Ingest</span>
+          </button>
+          <span style="font-size:.8rem;color:var(--muted);">PDF, DOCX, XLSX, PPTX supported</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jobs card -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span style="display:flex;align-items:center;gap:.5rem;">
+          <div class="icon" style="background:rgba(168,85,247,.15);">⚡</div>
+          Ingestion Jobs
+        </span>
+        <button class="btn-ghost" id="btn-refresh" style="font-size:.8rem;padding:.3rem .75rem;">↻ Refresh</button>
+      </div>
+      <div id="jobs-list">
+        <div id="jobs-empty">No jobs yet. Upload a document to get started.</div>
+      </div>
+    </div>
+
+    <!-- Query card -->
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(34,197,94,.1);">🔍</div>
+        Ask Questions (Legacy Sync)
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div>
+          <label for="query-doc-url">Document URL</label>
+          <input type="url" id="query-doc-url" placeholder="https://example.com/policy.pdf" />
+        </div>
+        <div>
+          <label for="query-questions">Questions (one per line)</label>
+          <textarea id="query-questions" placeholder="What is the coverage limit?&#10;What are the exclusions?"></textarea>
+        </div>
+        <button class="btn-primary" id="btn-query">
+          <span id="query-label">Ask</span>
+        </button>
+        <pre id="query-result" style="display:none;background:var(--surface2);padding:1rem;border-radius:8px;font-size:.82rem;overflow:auto;white-space:pre-wrap;max-height:300px;border:1px solid var(--border);"></pre>
+      </div>
+    </div>
+
+  </div><!-- /app-panel -->
+</main>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<script>
+(async () => {
+  // ── 1. Bootstrap: fetch public Supabase config from backend ───────────────
+  let supabase;
+  try {
+    const cfg = await fetch('/api/v1/config').then(r => r.json());
+    if (!cfg.supabase_url || !cfg.supabase_anon_key) {
+      showToast('Supabase not configured on server. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env', 'error', 8000);
+      return;
+    }
+    supabase = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+  } catch (e) {
+    showToast('Failed to load config: ' + e.message, 'error');
+    return;
+  }
+
+  // ── 2. Auth state management ──────────────────────────────────────────────
+  const loginPanel = document.getElementById('login-panel');
+  const appPanel   = document.getElementById('app-panel');
+  const userPill   = document.getElementById('user-pill');
+
+  let currentSession = null;
+  let jobs = [];  // { job_id, url, status, progress }
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    currentSession = session;
+    if (session) {
+      renderAuthed(session);
+    } else {
+      renderUnauthed();
+    }
+  });
+
+  // Handle OAuth redirect (token in URL fragment)
+  const { data: { session: initialSession } } = await supabase.auth.getSession();
+  currentSession = initialSession;
+  if (initialSession) renderAuthed(initialSession);
+  else renderUnauthed();
+
+  // ── 3. Render helpers ─────────────────────────────────────────────────────
+  function renderUnauthed() {
+    loginPanel.style.display = 'block';
+    appPanel.style.display   = 'none';
+    userPill.style.display   = 'none';
+  }
+
+  function renderAuthed(session) {
+    const meta = session.user.user_metadata || {};
+    const name = meta.full_name || meta.name || session.user.email.split('@')[0];
+    const avatar = meta.avatar_url || meta.picture || '';
+
+    loginPanel.style.display = 'none';
+    appPanel.style.display   = 'flex';
+    userPill.style.display   = 'flex';
+
+    document.getElementById('nav-name').textContent      = name;
+    document.getElementById('nav-avatar').src            = avatar;
+    document.getElementById('nav-avatar').style.display  = avatar ? 'block' : 'none';
+    document.getElementById('greeting-name').textContent = name.split(' ')[0];
+    document.getElementById('greeting-email').textContent = session.user.email;
+  }
+
+  function getToken() {
+    return currentSession?.access_token || '';
+  }
+
+  async function authedFetch(url, options = {}) {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
+  }
+
+  // ── 4. Sign in / out ──────────────────────────────────────────────────────
+  document.getElementById('btn-signin').addEventListener('click', async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) showToast('Sign-in failed: ' + error.message, 'error');
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    jobs = [];
+    renderJobsList();
+    showToast('Signed out', 'success');
+  });
+
+  // ── 5. Upload ─────────────────────────────────────────────────────────────
+  document.getElementById('btn-upload').addEventListener('click', async () => {
+    const url = document.getElementById('doc-url').value.trim();
+    if (!url) { showToast('Enter a document URL', 'error'); return; }
+
+    const btn   = document.getElementById('btn-upload');
+    const label = document.getElementById('upload-label');
+    btn.disabled = true;
+    label.innerHTML = '<span class="spinner"></span> Uploading…';
+
+    try {
+      const res = await authedFetch('/api/v1/hackrx/upload', {
+        method: 'POST',
+        body: JSON.stringify({ document_url: url }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.detail || 'Upload failed', 'error');
+        return;
+      }
+
+      jobs.unshift({ job_id: data.job_id, url, status: 'PENDING', progress: 0 });
+      renderJobsList();
+      document.getElementById('doc-url').value = '';
+      showToast('Document queued ✓', 'success');
+      // Start polling this job
+      pollJob(data.job_id);
+    } catch (e) {
+      showToast('Upload error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      label.textContent = 'Upload & Ingest';
+    }
+  });
+
+  // ── 6. Job polling ────────────────────────────────────────────────────────
+  async function pollJob(jobId) {
+    const POLL_INTERVAL = 2500;
+    const MAX_POLLS = 120; // 5 min cap
+    let n = 0;
+
+    const interval = setInterval(async () => {
+      n++;
+      if (n > MAX_POLLS) { clearInterval(interval); return; }
+      try {
+        const res  = await authedFetch(`/api/v1/hackrx/jobs/${jobId}/status`);
+        const data = await res.json();
+        const job  = jobs.find(j => j.job_id === jobId);
+        if (!job) { clearInterval(interval); return; }
+        job.status   = data.status;
+        job.progress = data.progress?.progress ?? (data.status === 'SUCCESS' ? 100 : 0);
+        renderJobsList();
+        if (['SUCCESS', 'FAILURE'].includes(data.status)) {
+          clearInterval(interval);
+          if (data.status === 'SUCCESS') showToast('Ingestion complete ✓', 'success');
+          else showToast('Ingestion failed: ' + (data.error || 'unknown'), 'error');
+        }
+      } catch (e) {
+        // ignore transient poll errors
+      }
+    }, POLL_INTERVAL);
+  }
+
+  document.getElementById('btn-refresh').addEventListener('click', () => {
+    jobs.forEach(j => {
+      if (!['SUCCESS', 'FAILURE'].includes(j.status)) pollJob(j.job_id);
+    });
+    showToast('Refreshing job statuses…', 'success');
+  });
+
+  function statusBadge(status) {
+    const map = {
+      PENDING:  'pending',
+      STARTED:  'progress',
+      PROGRESS: 'progress',
+      SUCCESS:  'success',
+      FAILURE:  'failure',
+      RETRY:    'pending',
+    };
+    const cls = map[status] || 'pending';
+    return `<span class="badge badge-${cls}">${status}</span>`;
+  }
+
+  function renderJobsList() {
+    const list  = document.getElementById('jobs-list');
+    const empty = document.getElementById('jobs-empty');
+    if (jobs.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      list.appendChild(empty);
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = jobs.map(j => `
+      <div class="job-row">
+        <div>
+          <div class="job-url">${escHtml(j.url)}</div>
+          <div class="job-id">${escHtml(j.job_id)}</div>
+          ${j.progress > 0 && j.status !== 'SUCCESS' && j.status !== 'FAILURE' ? `
+            <div class="progress-bar-track" style="margin-top:.4rem;width:220px;">
+              <div class="progress-bar-fill" style="width:${j.progress}%;"></div>
+            </div>
+          ` : ''}
+        </div>
+        ${statusBadge(j.status)}
+      </div>
+    `).join('');
+  }
+
+  // ── 7. Query (legacy sync) ────────────────────────────────────────────────
+  document.getElementById('btn-query').addEventListener('click', async () => {
+    const docUrl    = document.getElementById('query-doc-url').value.trim();
+    const rawQs     = document.getElementById('query-questions').value.trim();
+    const questions = rawQs.split('\n').map(s => s.trim()).filter(Boolean);
+
+    if (!docUrl)           { showToast('Enter a document URL', 'error'); return; }
+    if (!questions.length) { showToast('Enter at least one question', 'error'); return; }
+
+    const btn   = document.getElementById('btn-query');
+    const label = document.getElementById('query-label');
+    const out   = document.getElementById('query-result');
+    btn.disabled = true;
+    label.innerHTML = '<span class="spinner"></span> Querying…';
+    out.style.display = 'none';
+
+    try {
+      const res  = await authedFetch('/api/v1/hackrx/run', {
+        method: 'POST',
+        body: JSON.stringify({ documents: docUrl, questions }),
+      });
+      const data = await res.json();
+      out.textContent  = JSON.stringify(data, null, 2);
+      out.style.display = 'block';
+    } catch (e) {
+      showToast('Query error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      label.textContent = 'Ask';
+    }
+  });
+
+  // ── 8. Toast ──────────────────────────────────────────────────────────────
+  let _toastTimer;
+  function showToast(msg, type = 'success', ms = 3500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ''; }, ms);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+})();
+</script>
+</body>
+</html>
