@@ -24,4 +24,5 @@ COPY . .
 RUN mkdir -p /app/known_documents /app/temp_files /app/celery_beat_schedule
 
 # Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Uses shell form so $PORT is expanded at runtime (Render injects PORT)
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

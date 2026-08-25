@@ -13,7 +13,6 @@ from app.tasks import process_document, answer_questions
 from app.utils.document_parser import DocumentParser
 from app.auth.jwt import get_current_user
 from app.auth.models import AuthUser
-from app.auth.supabase_client import upsert_user_profile
 
 logger     = logging.getLogger("app.ask")
 router     = APIRouter()
@@ -136,10 +135,9 @@ async def ask_policy_questions(
     user: AuthUser = Depends(get_current_user),
 ):
     """
-    Synchronous RAG pipeline. Protected — requires a valid Supabase JWT.
-    Upserts the user profile on first call (idempotent via ON CONFLICT DO NOTHING).
+    Synchronous RAG pipeline. Protected — requires a valid JWT.
     """
-    upsert_user_profile(user)
+    
     logger.info(
         "RAG run requested",
         extra={"user_id": user.id, "questions": len(req.questions)},
@@ -154,10 +152,9 @@ async def upload_document(
     user: AuthUser = Depends(get_current_user),
 ) -> DocumentUploadResponse:
     """
-    Async document ingestion. Protected — requires a valid Supabase JWT.
+    Async document ingestion. Protected — requires a valid JWT.
     Stores job ownership in Redis so only the submitting user can query status.
     """
-    upsert_user_profile(user)
     try:
         parser = DocumentParser()
         logger.info(
@@ -201,7 +198,7 @@ async def get_job_status(
     user: AuthUser = Depends(get_current_user),
 ) -> JobStatus:
     """
-    Returns status for a Celery job.  Protected — requires a valid Supabase JWT.
+    Returns status for a Celery job.  Protected — requires a valid JWT.
 
     Returns 403 if the requesting user is not the job owner.
     Returns 404 if the job ownership record has expired (>24 h) — the user

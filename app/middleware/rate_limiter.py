@@ -8,7 +8,8 @@ key with a 1-minute TTL.  On every request we INCR that key and compare the
 count to the configured limit.  If the key is new we also set its TTL so the
 window slides forward from the *first* request in the window.
 
-Rate limit table (reasoning in implementation_plan.md):
+Rate limit table:
+  POST /api/v1/auth/*                →  5  req / 60 s   (strict, brute-force)
   POST /api/v1/hackrx/upload          →  5  req / 60 s   (expensive ingestion)
   POST /api/v1/hackrx/run             →  20 req / 60 s   (moderate RAG cost)
   GET  /api/v1/hackrx/jobs/*/status   →  60 req / 60 s   (cheap Redis lookup)
@@ -41,6 +42,7 @@ logger = logging.getLogger("app.rate_limiter")
 # ---------------------------------------------------------------------------
 ROUTE_LIMITS: list[tuple[str, str, int, int]] = [
     # (method, path_prefix,                          limit, window_s)
+    ("POST",  "/api/v1/auth/",                     5,    60),
     ("POST",  "/api/v1/hackrx/upload",               5,    60),
     ("POST",  "/api/v1/hackrx/run",                  20,   60),
     ("GET",   "/api/v1/hackrx/jobs",                 60,   60),
@@ -63,16 +65,16 @@ def _get_identity(request: Request) -> str:
     Derive a rate-limit identity key from the request.
 
     Priority:
-      1. Supabase JWT present → extract the 'sub' claim (user UUID).
-         Rate-limit key is  user:<supabase-uuid>  — stable across token
-         refreshes because the UUID never changes for a given user.
+      1. JWT present → extract the 'sub' claim (user ID).
+         Rate-limit key is  user:<user-id>  — stable across token
+         refreshes because the ID never changes for a given user.
       2. No valid JWT → fall back to client IP.
 
     We decode WITHOUT verifying the signature here because:
       - Signature verification already happens in get_current_user().
       - The rate limiter runs before route handlers and we don't want to
         duplicate the secret-loading logic or add latency on every request.
-      - An attacker cannot meaningfully fake a different user UUID here
+      - An attacker cannot meaningfully fake a different user ID here
         because the route handler will still reject the tampered token.
     """
     auth = request.headers.get("Authorization", "")

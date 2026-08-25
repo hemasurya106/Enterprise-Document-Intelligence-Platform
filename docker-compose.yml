@@ -18,6 +18,22 @@ services:
     networks:
       - rag-network
 
+  # MongoDB - User storage for authentication
+  mongodb:
+    image: mongo:7
+    container_name: rag-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag-network
+
   # FastAPI Application
   fastapi-app:
     build:
@@ -28,11 +44,15 @@ services:
       - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - MONGODB_URL=mongodb://mongodb:27017/docintel
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
       - CELERY_LOG_LEVEL=info
     depends_on:
       redis:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     volumes:
       - ./app:/app/app
@@ -50,11 +70,15 @@ services:
     container_name: rag-celery-worker
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - MONGODB_URL=mongodb://mongodb:27017/docintel
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
       - CELERY_LOG_LEVEL=info
     depends_on:
       redis:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     volumes:
       - ./app:/app/app
@@ -78,8 +102,6 @@ services:
     container_name: rag-celery-beat
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
       - CELERY_LOG_LEVEL=info
     depends_on:
       redis:
@@ -119,6 +141,7 @@ services:
 
 volumes:
   redis_data:
+  mongodb_data:
   celery_beat_schedule:
 
 networks:

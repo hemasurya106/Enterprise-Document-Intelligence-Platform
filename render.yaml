@@ -4,19 +4,15 @@ services:
   # -------------------------------------------------------------------------
   - type: web
     name: docintel-api
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: REDIS_URL
         sync: false
-      - key: SUPABASE_URL
+      - key: MONGODB_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: SUPABASE_JWT_SECRET
+      - key: JWT_SECRET
         sync: false
       - key: OPENAI_API_KEY
         sync: false
@@ -28,20 +24,15 @@ services:
   # -------------------------------------------------------------------------
   - type: worker
     name: docintel-worker
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    # Concurrency of 2 to keep memory usage low on the free tier
-    startCommand: "celery -A app.celery_app worker -l info --concurrency=2"
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: "celery -A app.celery_app worker -l info --concurrency=2"
     envVars:
       - key: REDIS_URL
         sync: false
-      - key: SUPABASE_URL
+      - key: MONGODB_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: SUPABASE_JWT_SECRET
+      - key: JWT_SECRET
         sync: false
       - key: OPENAI_API_KEY
         sync: false
@@ -53,9 +44,9 @@ services:
   # -------------------------------------------------------------------------
   - type: worker
     name: docintel-beat
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A app.celery_app beat -l info"
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: "celery -A app.celery_app beat -l info"
     envVars:
       - key: REDIS_URL
         sync: false

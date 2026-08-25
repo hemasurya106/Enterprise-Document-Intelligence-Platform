@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .ask import router as ask_router
 from .routers.health import router as health_router
-from .routers.config import router as config_router
+from .routers.auth import router as auth_router
 from .middleware.logging import StructuredLoggingMiddleware, configure_json_logging
 from .middleware.rate_limiter import RateLimitMiddleware
 
@@ -24,7 +24,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 app = FastAPI(
     title="Enterprise Document Intelligence Platform",
     version="1.0.0",
-    description="RAG pipeline with async ingestion via Celery + Redis + Supabase Auth",
+    description="RAG pipeline with async ingestion via Celery + Redis + MongoDB Auth",
 )
 
 # ── Static files (login UI) ───────────────────────────────────────────────────
@@ -46,8 +46,8 @@ app.add_middleware(RateLimitMiddleware, redis_url=REDIS_URL)
 app.add_middleware(StructuredLoggingMiddleware)
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(config_router)   # GET /api/v1/config  (public — no auth)
-app.include_router(health_router)   # GET /health         (public — no auth)
+app.include_router(auth_router)     # POST /api/v1/auth/*  (public — no auth)
+app.include_router(health_router)   # GET /health          (public — no auth)
 app.include_router(ask_router)      # protected routes
 
 logger.info("Application startup complete", extra={"redis_url": REDIS_URL})

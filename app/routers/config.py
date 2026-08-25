@@ -1,16 +1,11 @@
 """
-Public config endpoint — exposes only the two browser-safe Supabase keys.
+Public config endpoint — returns non-sensitive runtime configuration.
 
-This lets the static index.html pick up SUPABASE_URL and SUPABASE_ANON_KEY
-at runtime without hardcoding them in the HTML file, so the same artifact
-works in development and production without rebuilding.
-
-NEVER expose SUPABASE_SERVICE_ROLE_KEY or SUPABASE_JWT_SECRET here.
+Previously exposed Supabase keys; now auth is self-managed so this
+endpoint is minimal.  Kept for forward-compatibility (e.g. feature flags).
 """
 
 from __future__ import annotations
-
-import os
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -18,15 +13,20 @@ from fastapi.responses import JSONResponse
 router = APIRouter(tags=["config"])
 
 
-@router.get("/api/v1/config", summary="Public browser configuration")
+@router.get("/api/v1/config", summary="Public runtime configuration")
 async def get_public_config() -> JSONResponse:
     """
-    Returns the two Supabase keys that are safe to expose in a browser.
-    All other secrets (service_role_key, jwt_secret) are server-only.
+    Returns non-sensitive runtime config for the frontend.
+    Auth is now self-managed (email/password + JWT), so no external
+    provider keys are needed.
     """
     return JSONResponse(
         content={
-            "supabase_url":      os.getenv("SUPABASE_URL", ""),
-            "supabase_anon_key": os.getenv("SUPABASE_ANON_KEY", ""),
+            "auth_provider": "self-managed",
+            "auth_endpoints": {
+                "register": "/api/v1/auth/register",
+                "login": "/api/v1/auth/login",
+                "me": "/api/v1/auth/me",
+            },
         }
     )

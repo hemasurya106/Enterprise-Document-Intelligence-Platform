@@ -19,7 +19,7 @@ google-generativeai>=0.8.5
 fastapi>=0.116.0
 uvicorn[standard]>=0.35.0
 
-pydantic>=2.11.0
+pydantic[email]>=2.11.0
 
 python-docx>=1.2.0
 openpyxl>=3.1.5
@@ -36,12 +36,13 @@ celery[redis]>=5.5.3
 redis>=6.2.0
 flower>=2.0.1
 
-# --- Supabase Auth ---
-PyJWT>=2.9.0          # JWT decode + HS256 verification (Supabase JWTs)
-supabase>=2.9.0       # Python client — server-side only (user_profiles upsert)
+# --- Auth (self-managed) ---
+PyJWT>=2.9.0              # JWT encode + decode (HS256, self-signed)
+passlib[bcrypt]>=1.7.4    # Password hashing
+pymongo>=4.7.0            # MongoDB driver
 
 # --- production hardening (no new packages needed) ---
 # Rate limiting  → redis (already above) — sliding-window via INCR+EXPIRE
 # Structured JSON logging → stdlib logging + json (no structlog needed)
 # Circuit breaker → stdlib threading + concurrent.futures (no tenacity needed)
-# Health check    → redis + celery[redis] (already above)
+# Health check    → redis + celery[redis] + pymongo (already above)

@@ -1,5 +1,5 @@
 """
-/health endpoint — active liveness check for Redis and Celery workers.
+/health endpoint — active liveness check for Redis, Celery workers, and MongoDB.
 
 Returns 200 if all checks pass, 503 if any check fails.
 This lets load balancers (ELB, nginx, GCP, etc.) route traffic away from
@@ -10,7 +10,8 @@ Response schema:
   "status":    "healthy" | "degraded",
   "checks": {
     "redis":           {"status": "ok"|"error", "latency_ms": 1.2, "detail": "..."},
-    "celery_workers":  {"status": "ok"|"error", "workers": [...], "detail": "..."}
+    "celery_workers":  {"status": "ok"|"error", "workers": [...], "detail": "..."},
+    "mongodb":         {"status": "ok"|"error", "latency_ms": 1.2, "detail": "..."}
   },
   "timestamp": "2026-07-18T07:00:00.000Z"
 }
@@ -74,20 +75,46 @@ def _check_celery() -> dict:
         return {"status": "error", "workers": [], "detail": str(exc)}
 
 
+def _check_mongodb() -> dict:
+    """Ping MongoDB with a 2-second timeout."""
+    start = time.perf_counter()
+    try:
+        from app.auth.mongodb_client import get_mongo_client
+
+        client = get_mongo_client()
+        if client is None:
+            # MongoDB client hasn't been initialised yet (no auth requests made)
+            # Try creating one for the health check
+            from app.auth.mongodb_client import _get_collection
+            _get_collection()  # triggers lazy init
+            client = get_mongo_client()
+
+        client.admin.command("ping")
+        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+        return {"status": "ok", "latency_ms": latency_ms}
+    except Exception as exc:
+        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+        logger.warning("Health: MongoDB check failed: %s", exc)
+        return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
+
+
 @router.get("/health", summary="Liveness + dependency health check")
 async def health() -> JSONResponse:
     """
     Active health check:
       - Pings Redis (same instance used by Celery broker/backend)
       - Pings live Celery workers via control channel
+      - Pings MongoDB (user store)
     Returns 200 if all healthy, 503 if anything is degraded.
     """
-    redis_result  = _check_redis()
-    celery_result = _check_celery()
+    redis_result   = _check_redis()
+    celery_result  = _check_celery()
+    mongodb_result = _check_mongodb()
 
     all_ok = (
-        redis_result["status"]  == "ok"
+        redis_result["status"]   == "ok"
         and celery_result["status"] == "ok"
+        and mongodb_result["status"] == "ok"
     )
 
     body = {
@@ -95,6 +122,7 @@ async def health() -> JSONResponse:
         "checks": {
             "redis":          redis_result,
             "celery_workers": celery_result,
+            "mongodb":        mongodb_result,
         },
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
     }
