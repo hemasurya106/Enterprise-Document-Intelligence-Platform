@@ -38,17 +38,48 @@ UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 
 def _check_redis() -> dict:
     start = time.perf_counter()
-    try:
-        url = (os.getenv("UPSTASH_REDIS_REST_URL") or UPSTASH_URL).strip("\"' \t\r\n")
-        token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or UPSTASH_TOKEN).strip("\"' \t\r\n")
-        r = UpstashRedis(url=url, token=token)
-        r.get("health_check_ping")
-        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-        return {"status": "ok", "latency_ms": latency_ms}
-    except Exception as exc:
-        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-        logger.warning("Health: Redis check failed: %s", exc)
-        return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
+    url = (os.getenv("UPSTASH_REDIS_REST_URL") or UPSTASH_URL).strip("\"' \t\r\n")
+    token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or UPSTASH_TOKEN).strip("\"' \t\r\n")
+    redis_url = (os.getenv("REDIS_URL") or "").strip("\"' \t\r\n")
+
+    # If REST URL/token is missing, attempt to derive from REDIS_URL
+    if (not url or not token) and redis_url:
+        try:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(redis_url)
+            if parsed.hostname and not url:
+                url = f"https://{parsed.hostname}"
+            if parsed.password and not token:
+                token = parsed.password
+        except Exception:
+            pass
+
+    # 1. Try Upstash REST API check
+    if url and token:
+        try:
+            r = UpstashRedis(url=url, token=token)
+            r.get("health_check_ping")
+            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+            return {"status": "ok", "latency_ms": latency_ms}
+        except Exception as exc:
+            logger.warning("Health: Upstash REST check failed (%s); trying Redis TCP fallback...", exc)
+
+    # 2. Resilient Fallback: Standard Redis TCP ping (same connection used by Celery)
+    if redis_url:
+        try:
+            import redis as redis_lib
+            clean_url = redis_url.replace("CERT_REQUIRED", "required")
+            r = redis_lib.from_url(clean_url, socket_timeout=2, socket_connect_timeout=2)
+            r.ping()
+            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+            return {"status": "ok", "latency_ms": latency_ms}
+        except Exception as exc:
+            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+            logger.warning("Health: Redis TCP fallback check failed: %s", exc)
+            return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
+
+    latency_ms = round((time.perf_counter() - start) * 1_000, 2)
+    return {"status": "error", "latency_ms": latency_ms, "detail": "No Redis credentials configured"}
 
 
 def _check_celery() -> dict:

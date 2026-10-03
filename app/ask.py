@@ -32,6 +32,18 @@ def _get_redis() -> UpstashRedis:
     if _redis is None:
         url = (os.getenv("UPSTASH_REDIS_REST_URL") or _UPSTASH_URL).strip("\"' \t\r\n")
         token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or _UPSTASH_TOKEN).strip("\"' \t\r\n")
+        if not url or not token:
+            redis_url = (os.getenv("REDIS_URL") or "").strip("\"' \t\r\n")
+            if redis_url:
+                try:
+                    import urllib.parse
+                    parsed = urllib.parse.urlparse(redis_url)
+                    if parsed.hostname and not url:
+                        url = f"https://{parsed.hostname}"
+                    if parsed.password and not token:
+                        token = parsed.password
+                except Exception:
+                    pass
         _redis = UpstashRedis(url=url, token=token)
     return _redis
 

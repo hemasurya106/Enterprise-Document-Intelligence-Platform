@@ -120,6 +120,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if self._redis is None:
             url = (self._upstash_url or os.getenv("UPSTASH_REDIS_REST_URL", "")).strip("\"' \t\r\n")
             token = (self._upstash_token or os.getenv("UPSTASH_REDIS_REST_TOKEN", "")).strip("\"' \t\r\n")
+            if not url or not token:
+                redis_url = (os.getenv("REDIS_URL") or "").strip("\"' \t\r\n")
+                if redis_url:
+                    try:
+                        import urllib.parse
+                        parsed = urllib.parse.urlparse(redis_url)
+                        if parsed.hostname and not url:
+                            url = f"https://{parsed.hostname}"
+                        if parsed.password and not token:
+                            token = parsed.password
+                    except Exception:
+                        pass
             self._redis = UpstashRedis(url=url, token=token)
         return self._redis
 
