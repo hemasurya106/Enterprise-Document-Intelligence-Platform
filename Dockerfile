@@ -2,6 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Memory and execution optimizations for low-resource environments (512MB RAM)
+ENV PYTHONUNBUFFERED=1 \
+    MALLOC_TRIM_THRESHOLD_=100000 \
+    C_FORCE_ROOT=1
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
