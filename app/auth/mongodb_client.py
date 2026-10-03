@@ -40,7 +40,7 @@ def _get_collection() -> Collection:
     """Return the ``users`` collection, creating the client + index on first call."""
     global _client
     if _client is None:
-        url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/docintel")
+        url = os.getenv("MONGODB_URL", "mongodb://localhost:27017/docintel").strip("\"' \t\r\n")
         _client = MongoClient(url, serverSelectionTimeoutMS=5000)
         # Ensure unique email index (idempotent)
         _client[_DB_NAME]["users"].create_index("email", unique=True)

@@ -112,13 +112,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp, upstash_url: str, upstash_token: str) -> None:
         super().__init__(app)
-        self._upstash_url = upstash_url
-        self._upstash_token = upstash_token
+        self._upstash_url = (upstash_url or "").strip("\"' \t\r\n")
+        self._upstash_token = (upstash_token or "").strip("\"' \t\r\n")
         self._redis: UpstashRedis | None = None
 
     def _get_redis(self) -> UpstashRedis:
         if self._redis is None:
-            self._redis = UpstashRedis(url=self._upstash_url, token=self._upstash_token)
+            url = (self._upstash_url or os.getenv("UPSTASH_REDIS_REST_URL", "")).strip("\"' \t\r\n")
+            token = (self._upstash_token or os.getenv("UPSTASH_REDIS_REST_TOKEN", "")).strip("\"' \t\r\n")
+            self._redis = UpstashRedis(url=url, token=token)
         return self._redis
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

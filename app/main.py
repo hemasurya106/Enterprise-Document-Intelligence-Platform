@@ -20,8 +20,8 @@ configure_json_logging(level=logging.INFO)
 
 logger = logging.getLogger("app.startup")
 
-UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "")
-UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
+UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "").strip("\"' \t\r\n")
+UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "").strip("\"' \t\r\n")
 app = FastAPI(
     title="Enterprise Document Intelligence Platform",
     version="1.0.0",

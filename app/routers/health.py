@@ -39,8 +39,8 @@ UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 def _check_redis() -> dict:
     start = time.perf_counter()
     try:
-        url = os.getenv("UPSTASH_REDIS_REST_URL", UPSTASH_URL)
-        token = os.getenv("UPSTASH_REDIS_REST_TOKEN", UPSTASH_TOKEN)
+        url = (os.getenv("UPSTASH_REDIS_REST_URL") or UPSTASH_URL).strip("\"' \t\r\n")
+        token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or UPSTASH_TOKEN).strip("\"' \t\r\n")
         r = UpstashRedis(url=url, token=token)
         r.get("health_check_ping")
         latency_ms = round((time.perf_counter() - start) * 1_000, 2)

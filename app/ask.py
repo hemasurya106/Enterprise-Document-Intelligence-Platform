@@ -30,8 +30,8 @@ _redis: UpstashRedis | None = None
 def _get_redis() -> UpstashRedis:
     global _redis
     if _redis is None:
-        url = os.getenv("UPSTASH_REDIS_REST_URL", _UPSTASH_URL)
-        token = os.getenv("UPSTASH_REDIS_REST_TOKEN", _UPSTASH_TOKEN)
+        url = (os.getenv("UPSTASH_REDIS_REST_URL") or _UPSTASH_URL).strip("\"' \t\r\n")
+        token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or _UPSTASH_TOKEN).strip("\"' \t\r\n")
         _redis = UpstashRedis(url=url, token=token)
     return _redis
 

@@ -4,10 +4,10 @@ from celery import Celery
 from celery.schedules import crontab
 from dotenv import load_dotenv
 load_dotenv()
-REDIS_URL = os.getenv('REDIS_URL')
+REDIS_URL = (os.getenv('REDIS_URL') or '').strip("\"' \t\r\n")
 if not REDIS_URL or REDIS_URL == 'redis://localhost:6379/0':
-    upstash_url = os.getenv('UPSTASH_REDIS_REST_URL', '')
-    upstash_token = os.getenv('UPSTASH_REDIS_REST_TOKEN', '')
+    upstash_url = (os.getenv('UPSTASH_REDIS_REST_URL') or '').strip("\"' \t\r\n")
+    upstash_token = (os.getenv('UPSTASH_REDIS_REST_TOKEN') or '').strip("\"' \t\r\n")
     if upstash_url and upstash_token:
         host = upstash_url.replace('https://', '').replace('http://', '').strip('/')
         REDIS_URL = f"rediss://default:{upstash_token}@{host}:6379?ssl_cert_reqs=CERT_REQUIRED"

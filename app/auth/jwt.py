@@ -46,7 +46,7 @@ _bearer = HTTPBearer(auto_error=False)
 def _get_jwt_secret() -> str:
     global _JWT_SECRET
     if _JWT_SECRET is None:
-        secret = os.getenv("JWT_SECRET")
+        secret = (os.getenv("JWT_SECRET") or "").strip("\"' \t\r\n")
         if not secret:
             raise RuntimeError(
                 "JWT_SECRET is not set. "
