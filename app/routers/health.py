@@ -24,7 +24,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-import redis as redis_lib
+from upstash_redis import Redis as UpstashRedis
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -32,19 +32,15 @@ from app.celery_app import get_celery_app
 
 logger   = logging.getLogger("app.health")
 router   = APIRouter(tags=["ops"])
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "")
+UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 
 
 def _check_redis() -> dict:
     start = time.perf_counter()
     try:
-        r = redis_lib.from_url(
-            REDIS_URL,
-            socket_connect_timeout=2,
-            socket_timeout=2,
-            decode_responses=True,
-        )
-        r.ping()
+        r = UpstashRedis(url=UPSTASH_URL, token=UPSTASH_TOKEN)
+        r.get("health_check_ping")
         latency_ms = round((time.perf_counter() - start) * 1_000, 2)
         return {"status": "ok", "latency_ms": latency_ms}
     except Exception as exc:

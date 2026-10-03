@@ -28,7 +28,7 @@ try:
 except ImportError:
     _pyjwt = None                  # graceful degradation if not yet installed
 
-import redis as redis_lib
+from upstash_redis import Redis as UpstashRedis
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -110,19 +110,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     Keys are namespaced as:  ratelimit:<identity>:<method>:<path_bucket>
     """
 
-    def __init__(self, app: ASGIApp, redis_url: str) -> None:
+    def __init__(self, app: ASGIApp, upstash_url: str, upstash_token: str) -> None:
         super().__init__(app)
-        self._redis_url = redis_url
-        self._redis: redis_lib.Redis | None = None
+        self._upstash_url = upstash_url
+        self._upstash_token = upstash_token
+        self._redis: UpstashRedis | None = None
 
-    def _get_redis(self) -> redis_lib.Redis:
+    def _get_redis(self) -> UpstashRedis:
         if self._redis is None:
-            self._redis = redis_lib.from_url(
-                self._redis_url,
-                decode_responses=True,
-                socket_connect_timeout=1,
-                socket_timeout=1,
-            )
+            self._redis = UpstashRedis(url=self._upstash_url, token=self._upstash_token)
         return self._redis
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
@@ -150,10 +146,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         redis_key = f"ratelimit:{identity}:{method}:{path_bucket}"
 
         try:
-            pipe = r.pipeline()
-            pipe.incr(redis_key)
-            pipe.ttl(redis_key)
-            count, ttl = pipe.execute()
+            count = r.incr(redis_key)
+            ttl = r.ttl(redis_key)
 
             # First request in window — set expiry
             if ttl == -1:
@@ -187,7 +181,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     headers={"Retry-After": str(retry_after)},
                 )
 
-        except redis_lib.RedisError as exc:
+        except Exception as exc:
             # Redis blipped — fail open (allow the request) rather than
             # hard-blocking all traffic.
             logger.warning("Rate limiter Redis error (%s) — allowing request", exc)

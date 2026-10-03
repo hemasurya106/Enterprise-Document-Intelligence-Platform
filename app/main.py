@@ -19,8 +19,8 @@ configure_json_logging(level=logging.INFO)
 
 logger = logging.getLogger("app.startup")
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
+UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "")
+UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 app = FastAPI(
     title="Enterprise Document Intelligence Platform",
     version="1.0.0",
@@ -42,7 +42,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware, redis_url=REDIS_URL)
+app.add_middleware(RateLimitMiddleware, upstash_url=UPSTASH_URL, upstash_token=UPSTASH_TOKEN)
 app.add_middleware(StructuredLoggingMiddleware)
 
 # ── Routers ───────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ app.include_router(auth_router)     # POST /api/v1/auth/*  (public — no auth)
 app.include_router(health_router)   # GET /health          (public — no auth)
 app.include_router(ask_router)      # protected routes
 
-logger.info("Application startup complete", extra={"redis_url": REDIS_URL})
+logger.info("Application startup complete", extra={"upstash_url": UPSTASH_URL})
 
 if __name__ == "__main__":
     import uvicorn

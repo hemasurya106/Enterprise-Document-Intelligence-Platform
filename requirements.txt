@@ -34,6 +34,7 @@ python-pptx>=1.0.2
 
 celery[redis]>=5.5.3
 redis>=6.2.0
+upstash-redis>=1.2.2
 flower>=2.0.1
 
 # --- Auth (self-managed) ---

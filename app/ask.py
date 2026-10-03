@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Optional
 
-import redis as redis_lib
+from upstash_redis import Redis as UpstashRedis
 from fastapi import APIRouter, Depends, HTTPException
 
 from pydantic import BaseModel, Field
@@ -20,21 +20,17 @@ celery_app = get_celery_app()
 
 # ── Redis client for job ownership ────────────────────────────────────────────
 # Reuses the same Redis instance as Celery / rate-limiter.
-_REDIS_URL   = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+_UPSTASH_URL   = os.getenv("UPSTASH_REDIS_REST_URL", "")
+_UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 _JOB_TTL_S   = 86_400   # 24 h — matches Celery result_expires
 
-_redis: redis_lib.Redis | None = None
+_redis: UpstashRedis | None = None
 
 
-def _get_redis() -> redis_lib.Redis:
+def _get_redis() -> UpstashRedis:
     global _redis
     if _redis is None:
-        _redis = redis_lib.from_url(
-            _REDIS_URL,
-            decode_responses=True,
-            socket_connect_timeout=2,
-            socket_timeout=2,
-        )
+        _redis = UpstashRedis(url=_UPSTASH_URL, token=_UPSTASH_TOKEN)
     return _redis
 
 
