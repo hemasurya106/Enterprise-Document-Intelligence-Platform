@@ -2,6 +2,9 @@ import os
 import logging
 
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -11,8 +14,6 @@ from .routers.health import router as health_router
 from .routers.auth import router as auth_router
 from .middleware.logging import StructuredLoggingMiddleware, configure_json_logging
 from .middleware.rate_limiter import RateLimitMiddleware
-
-load_dotenv()
 
 # Switch the root logger to structured JSON output as early as possible
 configure_json_logging(level=logging.INFO)

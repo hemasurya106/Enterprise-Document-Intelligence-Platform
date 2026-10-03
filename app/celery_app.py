@@ -4,7 +4,18 @@ from celery import Celery
 from celery.schedules import crontab
 from dotenv import load_dotenv
 load_dotenv()
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_URL = os.getenv('REDIS_URL')
+if not REDIS_URL or REDIS_URL == 'redis://localhost:6379/0':
+    upstash_url = os.getenv('UPSTASH_REDIS_REST_URL', '')
+    upstash_token = os.getenv('UPSTASH_REDIS_REST_TOKEN', '')
+    if upstash_url and upstash_token:
+        host = upstash_url.replace('https://', '').replace('http://', '').strip('/')
+        REDIS_URL = f"rediss://default:{upstash_token}@{host}:6379?ssl_cert_reqs=CERT_REQUIRED"
+    else:
+        REDIS_URL = 'redis://localhost:6379/0'
+elif REDIS_URL.startswith('rediss://') and 'ssl_cert_reqs' not in REDIS_URL:
+    delimiter = '&' if '?' in REDIS_URL else '?'
+    REDIS_URL = f"{REDIS_URL}{delimiter}ssl_cert_reqs=CERT_REQUIRED"
 CELERY_LOG_LEVEL = os.getenv('CELERY_LOG_LEVEL', 'info')
 _DEFAULT_POOL = 'solo' if sys.platform == 'win32' else 'prefork'
 CELERY_POOL = os.getenv('CELERY_POOL', _DEFAULT_POOL)

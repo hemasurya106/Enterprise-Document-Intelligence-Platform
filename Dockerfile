@@ -20,9 +20,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/known_documents /app/temp_files /app/celery_beat_schedule
+# Create necessary directories, sanitize line endings, and ensure start.sh is executable
+RUN mkdir -p /app/known_documents /app/temp_files /app/celery_beat_schedule \
+    && sed -i 's/\r$//' /app/start.sh \
+    && chmod +x /app/start.sh
 
-# Default command (can be overridden in docker-compose)
-# Uses shell form so $PORT is expanded at runtime (Render injects PORT)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Default command runs start.sh (starts Celery worker + beat in background, Uvicorn in foreground)
+CMD ["/app/start.sh"]
