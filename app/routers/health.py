@@ -1,24 +1,14 @@
 """
 /health endpoint — active liveness check for Redis, Celery workers, and MongoDB.
 
-Returns 200 if all checks pass, 503 if any check fails.
+Returns 200 if Redis + MongoDB are ok (Celery is informational only).
 This lets load balancers (ELB, nginx, GCP, etc.) route traffic away from
 unhealthy instances automatically.
-
-Response schema:
-{
-  "status":    "healthy" | "degraded",
-  "checks": {
-    "redis":           {"status": "ok"|"error", "latency_ms": 1.2, "detail": "..."},
-    "celery_workers":  {"status": "ok"|"error", "workers": [...], "detail": "..."},
-    "mongodb":         {"status": "ok"|"error", "latency_ms": 1.2, "detail": "..."}
-  },
-  "timestamp": "2026-07-18T07:00:00.000Z"
-}
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -32,140 +22,89 @@ from app.celery_app import get_celery_app
 
 logger   = logging.getLogger("app.health")
 router   = APIRouter(tags=["ops"])
-UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "")
+UPSTASH_URL   = os.getenv("UPSTASH_REDIS_REST_URL", "")
 UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
-
 
 async def _check_redis() -> dict:
     start = time.perf_counter()
-    url = (os.getenv("UPSTASH_REDIS_REST_URL") or UPSTASH_URL).strip("\"' \t\r\n")
+    url   = (os.getenv("UPSTASH_REDIS_REST_URL")   or UPSTASH_URL).strip("\"' \t\r\n")
     token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or UPSTASH_TOKEN).strip("\"' \t\r\n")
     redis_url = (os.getenv("REDIS_URL") or "").strip("\"' \t\r\n")
 
-    # If REST URL/token is missing, attempt to derive from REDIS_URL
     if (not url or not token) and redis_url:
         try:
             import urllib.parse
             parsed = urllib.parse.urlparse(redis_url)
-            if parsed.hostname and not url:
-                url = f"https://{parsed.hostname}"
-            if parsed.password and not token:
-                token = parsed.password
+            if parsed.hostname and not url: url = f"https://{parsed.hostname}"
+            if parsed.password and not token: token = parsed.password
         except Exception:
             pass
 
-    # 1. Try Upstash REST API check (async)
     if url and token:
         try:
             r = UpstashRedis(url=url, token=token)
             await r.get("health_check_ping")
-            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-            return {"status": "ok", "latency_ms": latency_ms}
+            return {"status": "ok", "latency_ms": round((time.perf_counter() - start) * 1000, 2)}
         except Exception as exc:
-            logger.warning("Health: Upstash REST check failed (%s); trying Redis TCP fallback...", exc)
+            logger.warning("Health: Upstash REST check failed (%s); trying fallback...", exc)
 
-    # 2. Resilient Fallback: Standard Redis TCP ping (same connection used by Celery)
     if redis_url:
-        import asyncio
         try:
             import redis as redis_lib
             clean_url = redis_url.replace("CERT_REQUIRED", "required")
             loop = asyncio.get_event_loop()
             r = await loop.run_in_executor(None, lambda: redis_lib.from_url(clean_url, socket_timeout=2, socket_connect_timeout=2))
             await loop.run_in_executor(None, r.ping)
-            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-            return {"status": "ok", "latency_ms": latency_ms}
+            return {"status": "ok", "latency_ms": round((time.perf_counter() - start) * 1000, 2)}
         except Exception as exc:
-            latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-            logger.warning("Health: Redis TCP fallback check failed: %s", exc)
-            return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
+            return {"status": "error", "latency_ms": round((time.perf_counter() - start) * 1000, 2), "detail": str(exc)}
 
-    latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-    return {"status": "error", "latency_ms": latency_ms, "detail": "No Redis credentials configured"}
+    return {"status": "error", "latency_ms": round((time.perf_counter() - start) * 1000, 2), "detail": "No credentials"}
 
-
-def _check_celery() -> dict:
-    """
-    Ping all Celery workers with a 2-second timeout.
-    Returns list of responding worker names.
-    """
+def _check_celery_sync() -> dict:
     try:
-        celery = get_celery_app()
-        inspect = celery.control.inspect(timeout=2)
-        pong    = inspect.ping()  # dict: {worker_name: {"ok": "pong"}} or None
-        if not pong:
-            return {
-                "status": "error",
-                "workers": [],
-                "detail": "No workers responded to ping within 2s",
-            }
-        workers = list(pong.keys())
-        return {"status": "ok", "workers": workers}
+        celery  = get_celery_app()
+        inspect = celery.control.inspect(timeout=1)
+        pong    = inspect.ping()
+        if not pong: return {"status": "error", "workers": [], "detail": "No workers responded"}
+        return {"status": "ok", "workers": list(pong.keys())}
     except Exception as exc:
-        logger.warning("Health: Celery check failed: %s", exc)
         return {"status": "error", "workers": [], "detail": str(exc)}
 
+async def _check_celery() -> dict:
+    loop = asyncio.get_event_loop()
+    try:
+        return await asyncio.wait_for(loop.run_in_executor(None, _check_celery_sync), timeout=3.0)
+    except asyncio.TimeoutError:
+        return {"status": "error", "workers": [], "detail": "Timed out after 3s"}
 
 def _check_mongodb() -> dict:
-    """Ping MongoDB with a 2-second timeout."""
     start = time.perf_counter()
     try:
-        from app.auth.mongodb_client import get_mongo_client
-
-        client = get_mongo_client()
-        if client is None:
-            # MongoDB client hasn't been initialised yet (no auth requests made)
-            # Try creating one for the health check
-            from app.auth.mongodb_client import _get_collection
-            _get_collection()  # triggers lazy init
-            client = get_mongo_client()
-
-        client.admin.command("ping")
-        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-        return {"status": "ok", "latency_ms": latency_ms}
+        from app.auth.mongodb_client import get_mongo_client, _get_collection
+        if get_mongo_client() is None: _get_collection()
+        get_mongo_client().admin.command("ping")
+        return {"status": "ok", "latency_ms": round((time.perf_counter() - start) * 1000, 2)}
     except Exception as exc:
-        latency_ms = round((time.perf_counter() - start) * 1_000, 2)
-        logger.warning("Health: MongoDB check failed: %s", exc)
-        return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
-
-
-import asyncio as _asyncio
-
+        return {"status": "error", "latency_ms": round((time.perf_counter() - start) * 1000, 2), "detail": str(exc)}
 
 @router.get("/health", summary="Liveness + dependency health check")
 async def health() -> JSONResponse:
-    """
-    Active health check:
-      - Pings Redis (Upstash REST, async)
-      - Pings live Celery workers via control channel
-      - Pings MongoDB (user store)
-    Returns 200 if all healthy, 503 if anything is degraded.
-    All three checks run in parallel to minimise latency.
-    """
-    loop = _asyncio.get_event_loop()
-    redis_result, celery_result, mongodb_result = await _asyncio.gather(
+    loop = asyncio.get_event_loop()
+    redis_result, celery_result, mongodb_result = await asyncio.gather(
         _check_redis(),
-        loop.run_in_executor(None, _check_celery),
+        _check_celery(),
         loop.run_in_executor(None, _check_mongodb),
     )
 
-    all_ok = (
-        redis_result["status"]   == "ok"
-        and celery_result["status"] == "ok"
-        and mongodb_result["status"] == "ok"
-    )
+    # Celery is intentionally excluded — it starts separately from the web process.
+    all_ok = (redis_result["status"] == "ok" and mongodb_result["status"] == "ok")
 
     body = {
         "status":    "healthy" if all_ok else "degraded",
-        "checks": {
-            "redis":          redis_result,
-            "celery_workers": celery_result,
-            "mongodb":        mongodb_result,
-        },
+        "checks":    {"redis": redis_result, "celery_workers": celery_result, "mongodb": mongodb_result},
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
     }
-
     http_status = 200 if all_ok else 503
-    if not all_ok:
-        logger.warning("Health check degraded: %s", body["checks"])
+    if not all_ok: logger.warning("Health check degraded: %s", body["checks"])
     return JSONResponse(content=body, status_code=http_status)
