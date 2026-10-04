@@ -24,7 +24,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from upstash_redis import Redis as UpstashRedis
+from upstash_redis.asyncio import Redis as UpstashRedis
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -36,7 +36,7 @@ UPSTASH_URL = os.getenv("UPSTASH_REDIS_REST_URL", "")
 UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
 
 
-def _check_redis() -> dict:
+async def _check_redis() -> dict:
     start = time.perf_counter()
     url = (os.getenv("UPSTASH_REDIS_REST_URL") or UPSTASH_URL).strip("\"' \t\r\n")
     token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or UPSTASH_TOKEN).strip("\"' \t\r\n")
@@ -54,11 +54,11 @@ def _check_redis() -> dict:
         except Exception:
             pass
 
-    # 1. Try Upstash REST API check
+    # 1. Try Upstash REST API check (async)
     if url and token:
         try:
             r = UpstashRedis(url=url, token=token)
-            r.get("health_check_ping")
+            await r.get("health_check_ping")
             latency_ms = round((time.perf_counter() - start) * 1_000, 2)
             return {"status": "ok", "latency_ms": latency_ms}
         except Exception as exc:
@@ -66,11 +66,13 @@ def _check_redis() -> dict:
 
     # 2. Resilient Fallback: Standard Redis TCP ping (same connection used by Celery)
     if redis_url:
+        import asyncio
         try:
             import redis as redis_lib
             clean_url = redis_url.replace("CERT_REQUIRED", "required")
-            r = redis_lib.from_url(clean_url, socket_timeout=2, socket_connect_timeout=2)
-            r.ping()
+            loop = asyncio.get_event_loop()
+            r = await loop.run_in_executor(None, lambda: redis_lib.from_url(clean_url, socket_timeout=2, socket_connect_timeout=2))
+            await loop.run_in_executor(None, r.ping)
             latency_ms = round((time.perf_counter() - start) * 1_000, 2)
             return {"status": "ok", "latency_ms": latency_ms}
         except Exception as exc:
@@ -127,18 +129,25 @@ def _check_mongodb() -> dict:
         return {"status": "error", "latency_ms": latency_ms, "detail": str(exc)}
 
 
+import asyncio as _asyncio
+
+
 @router.get("/health", summary="Liveness + dependency health check")
 async def health() -> JSONResponse:
     """
     Active health check:
-      - Pings Redis (same instance used by Celery broker/backend)
+      - Pings Redis (Upstash REST, async)
       - Pings live Celery workers via control channel
       - Pings MongoDB (user store)
     Returns 200 if all healthy, 503 if anything is degraded.
+    All three checks run in parallel to minimise latency.
     """
-    redis_result   = _check_redis()
-    celery_result  = _check_celery()
-    mongodb_result = _check_mongodb()
+    loop = _asyncio.get_event_loop()
+    redis_result, celery_result, mongodb_result = await _asyncio.gather(
+        _check_redis(),
+        loop.run_in_executor(None, _check_celery),
+        loop.run_in_executor(None, _check_mongodb),
+    )
 
     all_ok = (
         redis_result["status"]   == "ok"

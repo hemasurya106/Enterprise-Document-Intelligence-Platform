@@ -28,7 +28,7 @@ try:
 except ImportError:
     _pyjwt = None                  # graceful degradation if not yet installed
 
-from upstash_redis import Redis as UpstashRedis
+from upstash_redis.asyncio import Redis as UpstashRedis
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -160,12 +160,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         redis_key = f"ratelimit:{identity}:{method}:{path_bucket}"
 
         try:
-            count = r.incr(redis_key)
-            ttl = r.ttl(redis_key)
+            count = await r.incr(redis_key)
+            ttl = await r.ttl(redis_key)
 
             # First request in window — set expiry
             if ttl == -1:
-                r.expire(redis_key, window)
+                await r.expire(redis_key, window)
                 ttl = window
 
             if count > limit:

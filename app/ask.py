@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Optional
 
-from upstash_redis import Redis as UpstashRedis
+from upstash_redis.asyncio import Redis as UpstashRedis
 from fastapi import APIRouter, Depends, HTTPException
 
 from pydantic import BaseModel, Field
@@ -48,12 +48,12 @@ def _get_redis() -> UpstashRedis:
     return _redis
 
 
-def _set_job_owner(job_id: str, user_id: str) -> None:
+async def _set_job_owner(job_id: str, user_id: str) -> None:
     """Store owner_id alongside the Celery task so we can enforce ownership."""
     try:
         r = _get_redis()
-        r.hset(f"job:{job_id}", mapping={"owner_id": user_id})
-        r.expire(f"job:{job_id}", _JOB_TTL_S)
+        await r.hset(f"job:{job_id}", values={"owner_id": user_id})
+        await r.expire(f"job:{job_id}", _JOB_TTL_S)
     except Exception as exc:
         # Non-fatal — worst case a job is orphaned and the owner check skips
         logger.warning(
@@ -62,11 +62,11 @@ def _set_job_owner(job_id: str, user_id: str) -> None:
         )
 
 
-def _get_job_owner(job_id: str) -> Optional[str]:
+async def _get_job_owner(job_id: str) -> Optional[str]:
     """Return the owner_id for a job, or None if the key has expired / never set."""
     try:
         r = _get_redis()
-        return r.hget(f"job:{job_id}", "owner_id")
+        return await r.hget(f"job:{job_id}", "owner_id")
     except Exception as exc:
         logger.warning(
             "Failed to get job owner from Redis",
@@ -180,7 +180,7 @@ async def upload_document(
         task = process_document.delay(file_path, req.document_url)
 
         # Record ownership before returning so the status endpoint can verify
-        _set_job_owner(task.id, user.id)
+        await _set_job_owner(task.id, user.id)
 
         logger.info(
             "Document queued for ingestion",
@@ -214,7 +214,7 @@ async def get_job_status(
     Returns 404 if the job ownership record has expired (>24 h) — the user
     should re-submit if needed.
     """
-    owner_id = _get_job_owner(job_id)
+    owner_id = await _get_job_owner(job_id)
 
     if owner_id is None:
         # Ownership record expired or never written (e.g. pre-auth jobs)
