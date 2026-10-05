@@ -25,7 +25,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-from passlib.hash import bcrypt
+import bcrypt
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError
@@ -57,6 +57,13 @@ def get_mongo_client() -> Optional[MongoClient]:
 # User CRUD
 # ---------------------------------------------------------------------------
 
+def hash_password(password: str) -> str:
+    """Hash *password* with bcrypt, truncating to 72 bytes."""
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
+
+
 def create_user(email: str, password: str, full_name: Optional[str] = None) -> dict:
     """
     Hash *password* with bcrypt and insert a new user document.
@@ -67,7 +74,7 @@ def create_user(email: str, password: str, full_name: Optional[str] = None) -> d
     col = _get_collection()
     doc = {
         "email": email.lower().strip(),
-        "password_hash": bcrypt.hash(password),
+        "password_hash": hash_password(password),
         "full_name": full_name,
         "created_at": datetime.now(timezone.utc),
     }
@@ -102,4 +109,9 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
     """Check a plain-text password against its bcrypt hash."""
-    return bcrypt.verify(plain_password, password_hash)
+    try:
+        pwd_bytes = plain_password.encode("utf-8")[:72]
+        hash_bytes = password_hash.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+    except Exception:
+        return False

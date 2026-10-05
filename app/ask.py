@@ -1,9 +1,10 @@
 import os
+import uuid
 import logging
 from typing import Optional
 
 from upstash_redis.asyncio import Redis as UpstashRedis
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
 from pydantic import BaseModel, Field
 
@@ -199,6 +200,50 @@ async def upload_document(
         )
         raise HTTPException(
             status_code=500, detail=f"Error uploading document: {str(e)}"
+        )
+
+
+@router.post("/api/v1/hackrx/upload-file", response_model=DocumentUploadResponse)
+async def upload_document_file(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> DocumentUploadResponse:
+    """
+    Async direct binary file ingestion via multipart/form-data.
+    Saves the file to temp_files/ and queues Celery processing.
+    """
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        temp_dir = os.path.join(project_root, "temp_files")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        filename = os.path.basename(file.filename or "uploaded_document.pdf")
+        file_path = os.path.join(temp_dir, f"{uuid.uuid4().hex[:8]}_{filename}")
+
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        task = process_document.delay(file_path, filename)
+        await _set_job_owner(task.id, user.id)
+
+        logger.info(
+            "Local file uploaded & queued for ingestion",
+            extra={"job_id": task.id, "filename": filename, "user_id": user.id},
+        )
+        return DocumentUploadResponse(
+            job_id=task.id, status="pending", document_url=filename
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error uploading document file",
+            extra={"filename": file.filename, "user_id": user.id, "error": str(e)},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500, detail=f"Error uploading document file: {str(e)}"
         )
 
 

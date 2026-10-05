@@ -80,6 +80,14 @@ class DocumentParser:
         self.ocr_languages = ['eng']
 
     def download_file(self, url: str) -> str:
+        # Check if url is already a local file path
+        if os.path.isfile(url):
+            return url
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        temp_path = os.path.join(project_root, 'temp_files', os.path.basename(url))
+        if os.path.isfile(temp_path):
+            return temp_path
+
         response = requests.get(url)
         if response.status_code != 200:
             raise Exception(f'Failed to download file: {response.status_code}')

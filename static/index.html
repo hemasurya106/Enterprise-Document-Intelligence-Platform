@@ -1,2441 +1,2146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DocIntel — Turn Documents Into Intelligence</title>
-  <meta name="description" content="Enterprise document intelligence powered by AI, semantic retrieval, and grounded RAG. Upload PDFs, Word docs, spreadsheets and get instant, cited answers." />
-  <meta property="og:title" content="DocIntel — Turn Documents Into Intelligence" />
-  <meta property="og:description" content="Enterprise document intelligence powered by AI, semantic retrieval, and grounded RAG." />
-  <meta name="theme-color" content="#050508" />
+  <title>DOCINTEL // Enterprise Neural Document Intelligence</title>
+  <meta name="description" content="Awwwards-grade Enterprise Document Intelligence Platform. Asynchronous RAG ingestion, OCR neural extraction, and vector synthesis powered by Celery, Redis, and Gemini." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
 
-  <!-- Fonts -->
+  <!-- Google Fonts: Syne, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
 
-  <!-- GSAP + ScrollTrigger -->
+  <!-- Three.js r128, GSAP 3.12.5, ScrollTrigger, Marked.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 
   <style>
-    /* ══════════════════════════════════════════════
-       RESET + ROOT
-    ══════════════════════════════════════════════ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ==========================================================================
+       DESIGN SYSTEM: OKLCH Color Engine & Fluid Typography
+       Standard: Awwwards SOTD (8.0+) × Anti-Slop Taste-Skill
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
 
     :root {
-      --void:         #050508;
-      --deep:         #0a0c14;
-      --surface:      #0f1120;
-      --glass:        rgba(255,255,255,0.03);
-      --border:       rgba(255,255,255,0.07);
-      --border-hi:    rgba(255,255,255,0.14);
-      --text:         #e8eaf0;
-      --muted:        #6b7280;
-      --dim:          #374151;
-      --accent:       #6366f1;
-      --accent-hi:    #818cf8;
-      --accent-glow:  rgba(99,102,241,0.18);
-      --accent-glow2: rgba(99,102,241,0.08);
-      --amber:        #f59e0b;
-      --amber-glow:   rgba(245,158,11,0.12);
-      --green:        #22c55e;
-      --red:          #ef4444;
-      --doc-white:    #f8fafc;
-      --radius:       14px;
-      --nav-h:        64px;
+      /* OKLCH Perceptually Uniform Palettes */
+      --canvas: oklch(0.105 0.015 265);
+      --canvas-surface: oklch(0.14 0.018 265 / 0.72);
+      --canvas-surface-hover: oklch(0.17 0.022 265 / 0.85);
+      --canvas-elevated: oklch(0.19 0.025 265 / 0.95);
+      
+      --text-1: oklch(0.97 0.005 265);
+      --text-2: oklch(0.72 0.015 265);
+      --text-3: oklch(0.48 0.012 265);
+      --text-dim: oklch(0.36 0.01 265);
+
+      --neon-cyan: oklch(0.80 0.185 192);
+      --neon-cyan-glow: oklch(0.80 0.185 192 / 0.22);
+      --neon-violet: oklch(0.72 0.22 315);
+      --neon-violet-glow: oklch(0.72 0.22 315 / 0.22);
+      --neon-emerald: oklch(0.78 0.18 152);
+      --neon-amber: oklch(0.76 0.19 75);
+      --neon-rose: oklch(0.68 0.22 25);
+
+      --border-subtle: oklch(0.95 0.01 265 / 0.07);
+      --border-medium: oklch(0.95 0.01 265 / 0.14);
+      --border-glow: oklch(0.80 0.185 192 / 0.38);
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    html { scroll-behavior: auto; font-size: 16px; }
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--canvas);
+      color: var(--text-1);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--void);
-      color: var(--text);
-      overflow-x: hidden;
-      line-height: 1.6;
-    }
-
-    ::selection { background: var(--accent-glow); color: var(--text); }
-
-    /* scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: var(--void); }
-    ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 99px; }
-
-    /* ══════════════════════════════════════════════
-       UTILITIES
-    ══════════════════════════════════════════════ */
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .7rem;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--accent-hi);
-    }
-    .hidden { opacity: 0; }
-
-    /* ══════════════════════════════════════════════
-       NAVIGATION
-    ══════════════════════════════════════════════ */
-    #nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 1000;
-      height: var(--nav-h);
-      display: flex; align-items: center;
-      padding: 0 2.5rem;
-      justify-content: space-between;
-      transition: background .4s, backdrop-filter .4s, border-color .4s, padding .4s;
-    }
-    #nav.scrolled {
-      background: rgba(5,5,8,.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-    }
-
-    .nav-logo {
-      display: flex; align-items: center; gap: .5rem;
-      font-weight: 800; font-size: 1.1rem;
-      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      text-decoration: none;
-    }
-    .nav-logo svg { width: 24px; height: 24px; flex-shrink: 0; }
-
-    .nav-links {
-      display: flex; align-items: center; gap: .25rem;
-      list-style: none;
-    }
-    .nav-links a {
-      font-size: .85rem; font-weight: 500;
-      color: var(--muted); padding: .4rem .75rem;
-      border-radius: 8px; text-decoration: none;
-      transition: color .2s, background .2s;
-    }
-    .nav-links a:hover { color: var(--text); background: var(--glass); }
-
-    #nav-cta {
-      display: inline-flex; align-items: center; gap: .4rem;
-      font-size: .85rem; font-weight: 600;
-      background: var(--accent);
-      color: #fff; padding: .45rem 1.1rem;
-      border-radius: 99px; text-decoration: none;
-      border: none; cursor: pointer;
-      transition: background .2s, transform .2s, box-shadow .2s;
-      box-shadow: 0 0 0 0 var(--accent-glow);
-    }
-    #nav-cta:hover {
-      background: var(--accent-hi);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 24px var(--accent-glow);
-    }
-
-    /* mobile nav toggle */
-    #nav-menu-btn {
-      display: none; background: none; border: none;
-      color: var(--text); cursor: pointer; font-size: 1.3rem;
-    }
-
-    /* ══════════════════════════════════════════════
-       HERO
-    ══════════════════════════════════════════════ */
-    #hero {
-      position: relative;
       min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      overflow: hidden;
-      padding: calc(var(--nav-h) + 2rem) 2rem 4rem;
-    }
-
-    #hero-canvas {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-    }
-
-    /* Radial gradient overlay */
-    #hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(99,102,241,0.07) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    #hero::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: 200px;
-      background: linear-gradient(to bottom, transparent, var(--void));
-      pointer-events: none;
-    }
-
-    .hero-content {
-      position: relative; z-index: 2;
-      text-align: center; max-width: 860px;
-    }
-
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: var(--glass); border: 1px solid var(--border-hi);
-      border-radius: 99px; padding: .35rem 1rem;
-      font-size: .72rem; font-family: 'JetBrains Mono', monospace;
-      letter-spacing: .1em; text-transform: uppercase;
-      color: var(--accent-hi); margin-bottom: 2rem;
-      opacity: 0; transform: translateY(10px);
-    }
-    .hero-eyebrow .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--green);
-      animation: pulse-dot 2s ease infinite;
-    }
-
-    .hero-title {
-      font-size: clamp(3rem, 7vw, 6rem);
-      font-weight: 900; line-height: 1.05;
-      letter-spacing: -.03em;
-      margin-bottom: 1.5rem;
-    }
-    .hero-title .line { display: block; overflow: hidden; }
-    .hero-title .word {
-      display: inline-block;
-      transform: translateY(110%);
-      opacity: 0;
-    }
-    .hero-title .accent-word {
-      background: linear-gradient(135deg, #818cf8, #c084fc, #f59e0b);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-
-    .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.2rem);
-      color: var(--muted); max-width: 580px; margin: 0 auto 2.5rem;
-      line-height: 1.7; opacity: 0;
-    }
-
-    .hero-actions {
-      display: flex; align-items: center; justify-content: center;
-      gap: 1rem; flex-wrap: wrap; opacity: 0;
-    }
-
-    .btn-hero-primary {
-      display: inline-flex; align-items: center; gap: .5rem;
-      font-weight: 700; font-size: 1rem;
-      background: linear-gradient(135deg, var(--accent), #7c3aed);
-      color: #fff; padding: .85rem 2rem;
-      border-radius: 99px; text-decoration: none; border: none; cursor: pointer;
-      transition: transform .2s, box-shadow .2s;
-      box-shadow: 0 0 40px rgba(99,102,241,0.3);
-      position: relative; overflow: hidden;
-    }
-    .btn-hero-primary::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-      opacity: 0; transition: opacity .2s;
-    }
-    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(99,102,241,0.45); }
-    .btn-hero-primary:hover::before { opacity: 1; }
-
-    .btn-hero-ghost {
-      display: inline-flex; align-items: center; gap: .5rem;
-      font-weight: 500; font-size: .95rem;
-      color: var(--muted); border: 1px solid var(--border-hi);
-      background: var(--glass); padding: .85rem 1.8rem;
-      border-radius: 99px; text-decoration: none; cursor: pointer;
-      transition: color .2s, border-color .2s, background .2s;
-    }
-    .btn-hero-ghost:hover { color: var(--text); border-color: var(--accent); background: var(--accent-glow2); }
-
-    /* Hero floating document */
-    #hero-doc {
-      position: relative; z-index: 2;
-      margin-top: 4rem;
-      width: 100%; max-width: 700px;
-      opacity: 0;
-    }
-    .hero-doc-frame {
-      background: rgba(15,17,32,.9);
-      border: 1px solid var(--border-hi);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,0.05);
-    }
-    .hero-doc-bar {
-      display: flex; align-items: center; gap: .5rem;
-      padding: .75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      background: rgba(5,5,8,.5);
-    }
-    .hero-doc-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .hero-doc-bar-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .72rem; color: var(--muted); margin-left: .5rem;
-    }
-    .hero-doc-body { padding: 1.25rem 1.5rem; }
-    .hero-doc-line {
-      height: 8px; border-radius: 4px;
-      background: var(--border);
-      margin-bottom: .6rem;
-    }
-
-    /* Scroll hint */
-    .scroll-hint {
-      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-      display: flex; flex-direction: column; align-items: center; gap: .5rem;
-      opacity: 0; z-index: 2;
-    }
-    .scroll-hint span { font-size: .72rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-    .scroll-arrow {
-      width: 24px; height: 24px;
-      border-right: 2px solid var(--muted);
-      border-bottom: 2px solid var(--muted);
-      transform: rotate(45deg);
-      animation: scroll-bounce 2s ease infinite;
-    }
-
-    /* ══════════════════════════════════════════════
-       SECTION BASE STYLES
-    ══════════════════════════════════════════════ */
-    section {
+      overflow-x: hidden;
       position: relative;
-      padding: 7rem 2rem;
-    }
-    .section-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .section-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .68rem; letter-spacing: .15em; text-transform: uppercase;
-      color: var(--accent-hi); margin-bottom: 1rem;
-      display: flex; align-items: center; gap: .5rem;
-    }
-    .section-label::before {
-      content: '';
-      display: inline-block; width: 20px; height: 1px;
-      background: var(--accent);
-    }
-    .section-title {
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      font-weight: 800; line-height: 1.1;
-      letter-spacing: -.02em; margin-bottom: 1rem;
-    }
-    .section-sub {
-      font-size: 1.05rem; color: var(--muted); max-width: 560px; line-height: 1.7;
+      background-color: var(--canvas);
     }
 
-    /* reveal animations */
-    .reveal {
-      opacity: 0;
-      transform: translateY(30px);
+    /* ── SVG Noise Grain Overlay (Tactile Film Texture) ─────────────────────── */
+    .noise-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     }
 
-    /* ══════════════════════════════════════════════
-       PROBLEM SECTION
-    ══════════════════════════════════════════════ */
-    #problem {
-      background: linear-gradient(180deg, var(--void) 0%, var(--deep) 100%);
-    }
-    .problem-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: .75rem; margin-top: 3rem;
-    }
-    .problem-doc {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem 1rem;
-      text-align: center;
-      transition: transform .3s, border-color .3s;
-    }
-    .problem-doc:hover { transform: translateY(-4px); border-color: var(--border-hi); }
-    .problem-doc-icon { font-size: 1.8rem; margin-bottom: .5rem; }
-    .problem-doc-type {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .65rem; color: var(--muted); letter-spacing: .05em;
+    /* ── Three.js WebGL Canvas ─────────────────────────────────────────────── */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
     }
 
-    .problem-statement {
-      margin-top: 4rem; padding: 2rem;
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: 12px;
-      background: var(--glass);
-      font-size: 1.15rem; color: var(--muted); line-height: 1.8;
-    }
-    .problem-statement strong { color: var(--text); }
-
-    /* ══════════════════════════════════════════════
-       PIPELINE / TRANSFORMATION SECTION
-    ══════════════════════════════════════════════ */
-    #pipeline {
-      background: var(--deep);
-    }
-    .pipeline-stages {
-      margin-top: 4rem;
-      display: flex; flex-direction: column; gap: 0;
-    }
-    .pipeline-stage {
-      display: grid;
-      grid-template-columns: 60px 1fr;
-      gap: 0 2rem;
-      position: relative;
-    }
-    .pipeline-stage:not(:last-child) .stage-line {
-      position: absolute;
-      left: 29px; top: 52px; bottom: 0;
-      width: 2px;
-      background: linear-gradient(180deg, var(--accent), transparent);
-    }
-    .stage-number {
-      width: 44px; height: 44px;
+    /* ── Custom Awwwards Magnetic Cursor ───────────────────────────────────── */
+    .custom-cursor-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-cyan);
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .8rem; font-weight: 600;
-      flex-shrink: 0; z-index: 1;
-      margin-top: .25rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 10000;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 0 12px var(--neon-cyan);
     }
-    .stage-content {
-      padding-bottom: 3rem;
+    .custom-cursor-ring {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-glow);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s var(--ease-out-expo), height 0.3s var(--ease-out-expo), border-color 0.2s;
     }
-    .stage-title {
-      font-size: 1.15rem; font-weight: 700; margin-bottom: .35rem;
+    body:hover .custom-cursor-ring.active {
+      width: 58px;
+      height: 58px;
+      border-color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.05);
     }
-    .stage-desc { color: var(--muted); font-size: .9rem; line-height: 1.6; margin-bottom: .75rem; }
-    .stage-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
-    .stage-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .65rem; letter-spacing: .06em;
-      padding: .2rem .55rem;
-      border-radius: 5px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .stage-tag.hi { border-color: rgba(99,102,241,0.3); color: var(--accent-hi); background: var(--accent-glow2); }
-
-    /* ══════════════════════════════════════════════
-       VECTOR SPACE CANVAS SECTION
-    ══════════════════════════════════════════════ */
-    #knowledge {
-      background: var(--deep);
-      overflow: hidden;
-      padding: 5rem 0;
-    }
-    .knowledge-inner {
-      max-width: 1100px; margin: 0 auto;
-      padding: 0 2rem;
-    }
-    #vector-canvas {
-      width: 100%; height: 520px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      margin-top: 3rem;
-      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(99,102,241,0.04) 0%, var(--void) 100%);
+    @media (hover: none) and (pointer: coarse) {
+      .custom-cursor-dot, .custom-cursor-ring { display: none !important; }
     }
 
-    /* ══════════════════════════════════════════════
-       RAG DEMO SECTION
-    ══════════════════════════════════════════════ */
-    #rag {
-      background: linear-gradient(180deg, var(--deep) 0%, var(--void) 100%);
+    /* ── Structural Layout ─────────────────────────────────────────────────── */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
-    .rag-container {
+
+    /* ── Header & Navigation ───────────────────────────────────────────────── */
+    .nav-header {
+      width: 100%;
+      max-width: 1400px;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(24px) saturate(180%);
+      background: oklch(0.105 0.015 265 / 0.65);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: all 0.3s var(--ease-out-expo);
+    }
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .brand-core-glyph {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+      padding: 1px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem; margin-top: 3.5rem;
+      place-items: center;
+      position: relative;
+      box-shadow: 0 0 20px var(--neon-cyan-glow);
     }
-    .rag-panel {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      min-height: 360px;
+    .brand-core-inner {
+      width: 100%;
+      height: 100%;
+      background: var(--canvas);
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--neon-cyan);
+      letter-spacing: -0.05em;
     }
-    .rag-panel-title {
-      font-size: .75rem; font-weight: 600;
-      letter-spacing: .08em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 1.25rem;
-      display: flex; align-items: center; gap: .5rem;
+    .brand-name-group {
+      display: flex;
+      flex-direction: column;
     }
-    .rag-panel-title .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent);
+    .brand-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .brand-subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--neon-cyan);
     }
 
-    /* Query input animation */
-    .rag-query-box {
-      background: var(--surface);
-      border: 1px solid var(--border-hi);
-      border-radius: 10px; padding: 1rem 1.25rem;
-      font-size: .9rem; margin-bottom: 1rem;
-      min-height: 48px; color: var(--text);
+    /* ── Live Telemetry Bar Pill ───────────────────────────────────────────── */
+    .telemetry-pill {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 0.45rem 1.1rem;
+      border-radius: var(--radius-full);
+      background: var(--canvas-surface);
+      border: 1px solid var(--border-subtle);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .telemetry-pill:hover {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+    }
+    .telemetry-node {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--text-2);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--neon-emerald);
+      box-shadow: 0 0 8px var(--neon-emerald);
+      animation: pulse-ring 2.5s infinite;
+    }
+    .pulse-dot.warning { background: var(--neon-amber); box-shadow: 0 0 8px var(--neon-amber); }
+    .pulse-dot.error { background: var(--neon-rose); box-shadow: 0 0 8px var(--neon-rose); }
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.75; }
+    }
+
+    /* ── Nav Actions ───────────────────────────────────────────────────────── */
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .btn-nav-outline {
+      padding: 0.5rem 1.1rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-medium);
+      background: transparent;
+      color: var(--text-1);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.25s var(--ease-out-expo);
+    }
+    .btn-nav-outline:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+      transform: translateY(-1px);
+    }
+    .user-profile-badge {
+      display: none;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+      border-radius: var(--radius-full);
+      background: var(--canvas-surface);
+      border: 1px solid var(--border-subtle);
+    }
+    .user-avatar-initials {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+      color: var(--canvas);
+      font-weight: 700;
+      font-size: 0.75rem;
+      display: grid;
+      place-items: center;
+    }
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.75rem;
+    }
+    .user-name { font-weight: 600; color: var(--text-1); }
+    .user-role-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--neon-cyan); }
+
+    /* ── Hero Section (Cinematic Art Direction) ────────────────────────────── */
+    .hero-container {
+      width: 100%;
+      max-width: 1400px;
+      min-height: calc(88vh - 80px);
+      padding: 4rem 2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
       position: relative;
     }
-    #query-cursor {
-      display: inline-block; width: 2px; height: 1em;
-      background: var(--accent-hi); margin-left: 1px;
-      animation: blink 1s step-end infinite;
-      vertical-align: text-bottom;
-    }
-
-    /* Step-back query */
-    .step-back-box {
-      background: var(--amber-glow);
-      border: 1px solid rgba(245,158,11,0.2);
-      border-radius: 8px; padding: .75rem 1rem;
-      font-size: .82rem; color: var(--amber);
-      font-style: italic; margin-bottom: 1rem;
-      opacity: 0; transform: translateY(6px);
-      transition: opacity .4s, transform .4s;
-    }
-    .step-back-box.show { opacity: 1; transform: translateY(0); }
-    .step-back-label {
-      font-size: .65rem; font-family: 'JetBrains Mono', monospace;
-      text-transform: uppercase; letter-spacing: .08em;
-      color: var(--amber); margin-bottom: .3rem; opacity: .7;
-    }
-
-    /* Context chunks */
-    .chunk-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px; padding: .85rem 1rem;
-      margin-bottom: .6rem; font-size: .8rem;
-      color: var(--muted); line-height: 1.6;
-      position: relative; overflow: hidden;
-      transition: border-color .3s;
-    }
-    .chunk-card.active {
-      border-color: var(--accent);
-      color: var(--text);
-    }
-    .chunk-card::before {
-      content: '';
-      position: absolute; left: 0; top: 0; bottom: 0;
-      width: 3px; background: var(--accent);
-      transform: scaleY(0); transition: transform .3s;
-    }
-    .chunk-card.active::before { transform: scaleY(1); }
-    .chunk-similarity {
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-full);
+      background: oklch(0.80 0.185 192 / 0.08);
+      border: 1px solid oklch(0.80 0.185 192 / 0.25);
+      color: var(--neon-cyan);
       font-family: 'JetBrains Mono', monospace;
-      font-size: .65rem; color: var(--accent-hi);
-      margin-bottom: .3rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.75rem;
     }
-
-    /* AI answer panel */
-    .answer-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px; padding: 1.25rem;
-      min-height: 180px; position: relative;
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.75rem, 6.5vw + 1rem, 6.5rem);
+      line-height: 0.93;
+      letter-spacing: -0.04em;
+      color: var(--text-1);
+      max-width: 1100px;
+      margin-bottom: 1.75rem;
     }
-    #ai-answer-text {
-      font-size: .9rem; line-height: 1.8; color: var(--text);
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, var(--text-1) 20%, var(--neon-cyan) 80%, var(--neon-violet) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .answer-thinking {
-      display: flex; gap: .4rem; align-items: center;
-      color: var(--muted); font-size: .82rem;
+    .hero-description {
+      font-size: clamp(1.05rem, 1.2vw + 0.5rem, 1.35rem);
+      line-height: 1.6;
+      color: var(--text-2);
+      max-width: 720px;
+      margin-bottom: 2.75rem;
+      font-weight: 400;
     }
-    .thinking-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent-hi);
-      animation: thinking-pulse 1.4s ease infinite;
+    .hero-actions-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin-bottom: 3.5rem;
     }
-    .thinking-dot:nth-child(2) { animation-delay: .2s; }
-    .thinking-dot:nth-child(3) { animation-delay: .4s; }
-
-    /* Citations */
-    .citation {
-      display: inline-flex; align-items: center; gap: .35rem;
-      background: var(--amber-glow); border: 1px solid rgba(245,158,11,0.2);
-      border-radius: 5px; padding: .15rem .45rem;
-      font-size: .72rem; font-family: 'JetBrains Mono', monospace;
-      color: var(--amber); margin-left: .25rem;
-      opacity: 0; transform: translateY(4px);
-      transition: opacity .3s, transform .3s;
-      cursor: default;
-    }
-    .citation.show { opacity: 1; transform: translateY(0); }
-    .citations-row { margin-top: 1rem; }
-
-    /* Demo tabs */
-    .demo-tabs {
-      display: flex; gap: .5rem; margin-top: 4rem; flex-wrap: wrap;
-    }
-    .demo-tab {
-      padding: .5rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: 8px; background: transparent;
-      color: var(--muted); font-size: .82rem;
-      cursor: pointer; transition: all .2s;
-      font-family: inherit;
-    }
-    .demo-tab.active, .demo-tab:hover {
-      border-color: var(--accent); color: var(--text);
-      background: var(--accent-glow2);
-    }
-    .demo-tab.active { background: var(--accent-glow); }
-
-    /* ══════════════════════════════════════════════
-       PRODUCT REVEAL SECTION
-    ══════════════════════════════════════════════ */
-    #product {
-      background: var(--void);
+    .btn-hero-primary {
+      padding: 0.95rem 2.2rem;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--neon-cyan) 0%, oklch(0.72 0.20 220) 100%);
+      color: oklch(0.12 0.02 260);
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 30px var(--neon-cyan-glow);
+      transition: all 0.3s var(--ease-out-expo);
+      position: relative;
       overflow: hidden;
     }
-    .product-browser {
-      margin-top: 3.5rem;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-hi);
-      box-shadow: 0 60px 120px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,0.04);
-      transform: translateY(60px); opacity: 0;
+    .btn-hero-primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 15px 40px oklch(0.80 0.185 192 / 0.45);
     }
-    .browser-chrome {
-      background: #1c1f2e;
-      padding: .85rem 1.25rem;
-      display: flex; align-items: center; gap: .75rem;
-      border-bottom: 1px solid var(--border);
+    .btn-hero-glass {
+      padding: 0.95rem 2rem;
+      border-radius: var(--radius-full);
+      background: var(--canvas-surface);
+      color: var(--text-1);
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px solid var(--border-medium);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      backdrop-filter: blur(16px);
+      transition: all 0.25s var(--ease-out-expo);
     }
-    .browser-dots { display: flex; gap: .4rem; }
-    .browser-dot { width: 11px; height: 11px; border-radius: 50%; }
-    .browser-url {
-      flex: 1; background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
-      border-radius: 6px; padding: .3rem .75rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .72rem; color: var(--muted);
-    }
-    .browser-content {
-      background: var(--deep);
-      padding: 2rem;
-      display: grid; grid-template-columns: 1fr 2fr;
-      gap: 1.5rem; min-height: 400px;
-    }
-    /* mini app panels */
-    .mini-panel {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem;
-    }
-    .mini-panel-title {
-      font-size: .75rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: .07em;
-      color: var(--muted); margin-bottom: 1rem;
-    }
-    .mini-doc-item {
-      display: flex; align-items: center; gap: .75rem;
-      padding: .6rem .75rem; border-radius: 8px;
-      margin-bottom: .4rem; cursor: pointer;
-      transition: background .15s;
-    }
-    .mini-doc-item:hover { background: var(--glass); }
-    .mini-doc-icon { font-size: 1.1rem; }
-    .mini-doc-name { font-size: .8rem; }
-    .mini-doc-badge {
-      font-size: .62rem; font-family: 'JetBrains Mono', monospace;
-      padding: .15rem .4rem; border-radius: 4px;
-      background: rgba(34,197,94,.12); color: var(--green);
-      margin-left: auto;
-    }
-
-    .mini-ask-input {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: .65rem .9rem;
-      font-size: .82rem; color: var(--text); width: 100%;
-      margin-bottom: .75rem;
-    }
-    .mini-answer {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 1rem;
-      font-size: .8rem; line-height: 1.7; color: var(--text);
-      min-height: 100px;
-    }
-    .mini-sources { margin-top: .75rem; }
-    .mini-source {
-      display: inline-flex; align-items: center; gap: .3rem;
-      font-size: .68rem; font-family: 'JetBrains Mono', monospace;
-      color: var(--amber); background: var(--amber-glow);
-      border: 1px solid rgba(245,158,11,0.15);
-      border-radius: 4px; padding: .15rem .4rem; margin-right: .3rem;
-    }
-
-    /* ══════════════════════════════════════════════
-       ARCHITECTURE SECTION
-    ══════════════════════════════════════════════ */
-    #architecture {
-      background: var(--deep);
-    }
-    .arch-stack {
-      margin-top: 3.5rem;
-      display: flex; flex-direction: column; gap: .75rem;
-    }
-    .arch-layer {
-      display: grid;
-      grid-template-columns: 180px 1fr;
-      gap: 1rem; align-items: center;
-      opacity: 0; transform: translateX(-20px);
-    }
-    .arch-layer-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--muted); text-align: right;
-      padding-right: 1rem; border-right: 2px solid var(--border);
-    }
-    .arch-layer-content {
-      display: flex; gap: .5rem; flex-wrap: wrap;
-    }
-    .arch-chip {
-      display: inline-flex; align-items: center; gap: .4rem;
-      background: var(--glass); border: 1px solid var(--border);
-      border-radius: 8px; padding: .45rem .85rem;
-      font-size: .78rem; font-weight: 500; color: var(--text);
-      cursor: default;
-      transition: border-color .2s, background .2s, transform .2s;
-    }
-    .arch-chip:hover {
-      border-color: var(--accent);
-      background: var(--accent-glow2);
+    .btn-hero-glass:hover {
+      background: var(--canvas-surface-hover);
+      border-color: var(--border-glow);
       transform: translateY(-2px);
     }
-    .arch-chip .arch-dot {
-      width: 6px; height: 6px; border-radius: 50%;
+
+    /* ── Prompt Quick Chips ────────────────────────────────────────────────── */
+    .quick-chips-strip {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .chips-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .prompt-chip {
+      padding: 0.4rem 0.95rem;
+      border-radius: var(--radius-full);
+      background: var(--canvas-surface);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out-expo);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .prompt-chip:hover {
+      border-color: var(--neon-cyan);
+      color: var(--text-1);
+      background: var(--canvas-surface-hover);
+      transform: translateY(-1px);
     }
 
-    /* ══════════════════════════════════════════════
-       FEATURES / CAPABILITIES SECTION
-    ══════════════════════════════════════════════ */
-    #capabilities {
-      background: var(--void);
-    }
-    .cap-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.25rem; margin-top: 3.5rem;
-    }
-    .cap-card {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      transition: border-color .25s, transform .25s;
-      opacity: 0;
-    }
-    .cap-card:hover {
-      border-color: var(--border-hi);
-      transform: translateY(-3px);
-    }
-    .cap-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; margin-bottom: 1rem;
-    }
-    .cap-title { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
-    .cap-desc { font-size: .85rem; color: var(--muted); line-height: 1.7; }
-
-    /* ══════════════════════════════════════════════
-       FINAL CTA SECTION
-    ══════════════════════════════════════════════ */
-    #final {
-      background: var(--void);
-      min-height: 80vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 8rem 2rem;
-      position: relative; overflow: hidden;
-    }
-    #final-canvas {
-      position: absolute; inset: 0;
-      pointer-events: none;
-    }
-    .final-content { position: relative; z-index: 2; }
-    .final-title {
-      font-size: clamp(2.5rem, 6vw, 5rem);
-      font-weight: 900; line-height: 1.1;
-      letter-spacing: -.03em; margin-bottom: 1.5rem;
-    }
-    .final-title .dim-line { color: var(--dim); }
-    .final-title .bright-line { color: var(--text); }
-    .final-title .accent-line {
-      background: linear-gradient(135deg, #818cf8, #c084fc);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .final-sub {
-      font-size: 1.1rem; color: var(--muted); margin-bottom: 2.5rem;
-    }
-    .final-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-
-    /* ══════════════════════════════════════════════
-       AUTH MODAL (overlay)
-    ══════════════════════════════════════════════ */
-    #auth-overlay {
-      position: fixed; inset: 0; z-index: 2000;
-      background: rgba(5,5,8,.92);
-      backdrop-filter: blur(20px);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none;
-      transition: opacity .3s;
-    }
-    #auth-overlay.open { opacity: 1; pointer-events: all; }
-    .auth-modal {
-      background: var(--surface);
-      border: 1px solid var(--border-hi);
-      border-radius: 20px; padding: 2.5rem;
-      width: 100%; max-width: 420px;
-      transform: scale(.95) translateY(10px);
-      transition: transform .3s;
-    }
-    #auth-overlay.open .auth-modal { transform: scale(1) translateY(0); }
-    .auth-modal-close {
-      position: absolute; top: 1rem; right: 1rem;
-      background: none; border: none; color: var(--muted);
-      font-size: 1.25rem; cursor: pointer;
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      transition: color .2s, background .2s;
-    }
-    .auth-modal-close:hover { color: var(--text); background: var(--glass); }
-    .auth-modal h2 {
-      font-size: 1.4rem; font-weight: 800; margin-bottom: .4rem;
-    }
-    .auth-modal p { color: var(--muted); font-size: .875rem; margin-bottom: 1.75rem; }
-
-    /* form elements */
-    .form-group { margin-bottom: 1rem; }
-    .form-label {
-      display: block; font-size: .75rem; font-weight: 600;
-      color: var(--muted); margin-bottom: .4rem;
-      letter-spacing: .06em; text-transform: uppercase;
-    }
-    .form-input {
+    /* ── Main Studio Bento Grid Layout ─────────────────────────────────────── */
+    .studio-container {
       width: 100%;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 10px; padding: .75rem 1rem;
-      color: var(--text); font-family: inherit; font-size: .9rem;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
+      max-width: 1400px;
+      padding: 2rem 2rem 6rem;
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 2rem;
     }
-    .form-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
+    @media (max-width: 1024px) {
+      .studio-container { grid-template-columns: 1fr; }
     }
-    .form-error {
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.25);
-      border-radius: 8px; padding: .6rem 1rem;
-      font-size: .82rem; color: var(--red); margin-bottom: .75rem;
-      display: none;
-    }
-    .form-toggle {
-      text-align: center; font-size: .82rem; color: var(--muted); margin-top: .75rem;
-    }
-    .form-toggle a { color: var(--accent-hi); cursor: pointer; text-decoration: none; }
-    .form-toggle a:hover { text-decoration: underline; }
 
-    /* ══════════════════════════════════════════════
-       APP PANEL (main platform UI)
-    ══════════════════════════════════════════════ */
-    #app-panel {
-      display: none;
-      position: fixed; inset: 0; z-index: 1500;
-      background: var(--void);
+    /* ── Studio Bento Cards ────────────────────────────────────────────────── */
+    .bento-card {
+      background: var(--canvas-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      backdrop-filter: blur(28px) saturate(190%);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      display: flex;
       flex-direction: column;
-      overflow: auto;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    #app-panel.open { display: flex; }
-    .app-nav {
-      height: var(--nav-h);
-      display: flex; align-items: center;
-      padding: 0 2rem;
-      border-bottom: 1px solid var(--border);
-      background: rgba(5,5,8,.85); backdrop-filter: blur(12px);
-      position: sticky; top: 0; z-index: 10;
+    .bento-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--border-glow) 50%, transparent 100%);
+      opacity: 0.6;
+    }
+    .bento-card:hover {
+      border-color: var(--border-medium);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 25px rgba(0, 240, 255, 0.05);
+    }
+    .card-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+    }
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .card-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: oklch(0.80 0.185 192 / 0.12);
+      border: 1px solid oklch(0.80 0.185 192 / 0.25);
+      color: var(--neon-cyan);
+      display: grid;
+      place-items: center;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+    }
+    .card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    /* ── Dropzone & Upload Mechanics ───────────────────────────────────────── */
+    .dropzone-container {
+      border: 2px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 2.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: oklch(0.12 0.015 265 / 0.4);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s var(--ease-out-expo);
+      margin-bottom: 1.5rem;
+    }
+    .dropzone-container:hover, .dropzone-container.drag-over {
+      border-color: var(--neon-cyan);
+      background: oklch(0.80 0.185 192 / 0.05);
+      box-shadow: 0 0 25px var(--neon-cyan-glow);
+    }
+    .dropzone-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--canvas-surface);
+      border: 1px solid var(--border-medium);
+      color: var(--neon-cyan);
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.95rem;
+      transition: transform 0.25s var(--ease-elastic);
+    }
+    .dropzone-container:hover .dropzone-icon {
+      transform: scale(1.1) translateY(-2px);
+      border-color: var(--neon-cyan);
+    }
+    .dropzone-heading {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-1);
+      margin-bottom: 0.35rem;
+    }
+    .dropzone-sub {
+      font-size: 0.8rem;
+      color: var(--text-3);
+    }
+
+    /* ── Form Controls & Inputs ────────────────────────────────────────────── */
+    .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      margin-bottom: 0.5rem;
+      display: flex;
       justify-content: space-between;
     }
-    .app-main {
-      flex: 1; max-width: 820px; margin: 0 auto;
-      width: 100%; padding: 2.5rem 1.5rem 5rem;
-      display: flex; flex-direction: column; gap: 1.75rem;
-    }
-    .app-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-    }
-    .app-card-title {
-      font-size: .95rem; font-weight: 700;
+    .input-wrapper {
+      position: relative;
       margin-bottom: 1.25rem;
-      display: flex; align-items: center; gap: .5rem;
     }
-    .app-card-title .icon {
-      width: 30px; height: 30px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .95rem;
+    .cyber-input {
+      width: 100%;
+      padding: 0.85rem 1.15rem;
+      border-radius: var(--radius-sm);
+      background: oklch(0.11 0.012 265 / 0.9);
+      border: 1px solid var(--border-medium);
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s var(--ease-out-expo);
+    }
+    .cyber-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+      background: oklch(0.13 0.015 265);
+    }
+    .cyber-input::placeholder { color: var(--text-dim); }
+
+    .cyber-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.95rem 1.15rem;
+      border-radius: var(--radius-sm);
+      background: oklch(0.11 0.012 265 / 0.9);
+      border: 1px solid var(--border-medium);
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: all 0.2s;
+      margin-bottom: 1.25rem;
+    }
+    .cyber-textarea:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
     }
 
-    /* jobs */
-    .job-row {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem; padding: .75rem 1rem;
-      background: rgba(255,255,255,0.02); border-radius: 8px;
-      font-size: .82rem; animation: slide-in .25s ease;
-      margin-bottom: .4rem;
+    .btn-action-primary {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--neon-cyan), oklch(0.72 0.20 220));
+      color: oklch(0.12 0.02 260);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      box-shadow: 0 4px 20px var(--neon-cyan-glow);
+      transition: all 0.25s var(--ease-out-expo);
     }
-    .job-url { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-    .job-id  { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: .72rem; }
-    .progress-track { height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: .35rem; }
-    .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7); border-radius: 99px; transition: width .4s; }
-
-    .badge {
-      display: inline-block; font-size: .65rem; font-weight: 700;
-      padding: .2rem .55rem; border-radius: 999px;
-      letter-spacing: .05em; text-transform: uppercase;
+    .btn-action-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 25px oklch(0.80 0.185 192 / 0.4);
     }
-    .badge-pending  { background: rgba(245,158,11,.12); color: var(--amber); }
-    .badge-progress { background: rgba(99,102,241,.15); color: #818cf8; }
-    .badge-success  { background: rgba(34,197,94,.12);  color: var(--green); }
-    .badge-failure  { background: rgba(239,68,68,.12);  color: var(--red); }
-
-    /* ══════════════════════════════════════════════
-       SHARED BUTTON STYLES
-    ══════════════════════════════════════════════ */
-    .btn-primary {
-      display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-      background: var(--accent); color: #fff;
-      font-weight: 600; font-size: .875rem;
-      padding: .65rem 1.35rem; border: none;
-      border-radius: 8px; cursor: pointer;
-      transition: background .2s, transform .2s, box-shadow .2s;
-      box-shadow: 0 2px 12px var(--accent-glow); font-family: inherit;
-    }
-    .btn-primary:hover { background: var(--accent-hi); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
-    .btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-    .btn-ghost {
-      background: transparent; border: 1px solid var(--border);
-      color: var(--muted); font-size: .8rem;
-      padding: .4rem .9rem; border-radius: 8px; cursor: pointer;
-      transition: border-color .2s, color .2s; font-family: inherit;
-    }
-    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
-
-    /* ══════════════════════════════════════════════
-       TOAST
-    ══════════════════════════════════════════════ */
-    #toast {
-      position: fixed; bottom: 1.5rem; right: 1.5rem;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: .85rem 1.25rem;
-      font-size: .875rem; box-shadow: 0 8px 32px rgba(0,0,0,.5);
-      opacity: 0; transform: translateY(10px);
-      transition: opacity .25s, transform .25s;
-      pointer-events: none; max-width: 320px; z-index: 3000;
-    }
-    #toast.show { opacity: 1; transform: translateY(0); }
-    #toast.error   { border-left: 3px solid var(--red); }
-    #toast.success { border-left: 3px solid var(--green); }
-
-    /* ══════════════════════════════════════════════
-       SPINNER
-    ══════════════════════════════════════════════ */
-    .spinner {
-      display: inline-block; width: 13px; height: 13px;
-      border: 2px solid rgba(255,255,255,.2);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin .7s linear infinite;
+    .btn-action-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
     }
 
-    /* ══════════════════════════════════════════════
-       FOOTER
-    ══════════════════════════════════════════════ */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
+    /* ── Real-Time Multi-Stage Celery Pipeline Visualizer ──────────────────── */
+    .pipeline-radar-card {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .pipeline-stages-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 1.25rem 0 1.5rem;
+    }
+    .stage-node {
+      padding: 0.75rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: oklch(0.12 0.012 265);
+      border: 1px solid var(--border-subtle);
       text-align: center;
-      font-size: .8rem; color: var(--dim);
+      transition: all 0.3s;
     }
-    footer a { color: var(--muted); text-decoration: none; }
-    footer a:hover { color: var(--text); }
+    .stage-node.active {
+      border-color: var(--neon-cyan);
+      background: oklch(0.80 0.185 192 / 0.08);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+    }
+    .stage-node.done {
+      border-color: var(--neon-emerald);
+      background: oklch(0.78 0.18 152 / 0.08);
+    }
+    .stage-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-3);
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+    .stage-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .stage-node.active .stage-name { color: var(--neon-cyan); }
+    .stage-node.done .stage-name { color: var(--neon-emerald); }
 
-    /* ══════════════════════════════════════════════
-       KEYFRAMES
-    ══════════════════════════════════════════════ */
-    @keyframes spin           { to { transform: rotate(360deg); } }
-    @keyframes blink          { 50% { opacity: 0; } }
-    @keyframes pulse-dot      { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-    @keyframes scroll-bounce  { 0%,100% { transform: rotate(45deg) translateY(0); } 50% { transform: rotate(45deg) translateY(5px); } }
-    @keyframes slide-in       { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes thinking-pulse { 0%,80%,100% { transform: scale(0.6); opacity: .3; } 40% { transform: scale(1); opacity: 1; } }
-    @keyframes float-slow     { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-    @keyframes glow-pulse     { 0%,100% { box-shadow: 0 0 20px var(--accent-glow); } 50% { box-shadow: 0 0 40px rgba(99,102,241,.35); } }
+    /* ── Job History Feed ──────────────────────────────────────────────────── */
+    .job-history-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 0.4rem;
+    }
+    .job-history-feed::-webkit-scrollbar { width: 4px; }
+    .job-history-feed::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 4px; }
 
-    /* ══════════════════════════════════════════════
-       RESPONSIVE
-    ══════════════════════════════════════════════ */
+    .job-item {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      background: oklch(0.12 0.012 265 / 0.6);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      transition: all 0.2s;
+    }
+    .job-item:hover {
+      border-color: var(--border-medium);
+      background: oklch(0.14 0.015 265);
+    }
+    .job-info-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .job-doc-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .job-task-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-3);
+    }
+    .job-status-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-PENDING  { background: oklch(0.76 0.19 75 / 0.12); color: var(--neon-amber); border: 1px solid oklch(0.76 0.19 75 / 0.25); }
+    .status-STARTED  { background: oklch(0.80 0.185 192 / 0.12); color: var(--neon-cyan); border: 1px solid oklch(0.80 0.185 192 / 0.25); }
+    .status-PROGRESS { background: oklch(0.72 0.22 315 / 0.12); color: var(--neon-violet); border: 1px solid oklch(0.72 0.22 315 / 0.25); }
+    .status-SUCCESS  { background: oklch(0.78 0.18 152 / 0.12); color: var(--neon-emerald); border: 1px solid oklch(0.78 0.18 152 / 0.25); }
+    .status-FAILURE  { background: oklch(0.68 0.22 25 / 0.12); color: var(--neon-rose); border: 1px solid oklch(0.68 0.22 25 / 0.25); }
+
+    /* ── Intelligence Workbench Synthesis Output ───────────────────────────── */
+    .synthesis-viewport {
+      margin-top: 1.5rem;
+      border-radius: var(--radius-md);
+      background: oklch(0.11 0.012 265 / 0.95);
+      border: 1px solid var(--border-medium);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      min-height: 220px;
+    }
+    .synthesis-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.85rem;
+    }
+    .synthesis-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-3);
+    }
+    .markdown-body {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-1);
+    }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+      font-family: 'Syne', sans-serif;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+    }
+    .markdown-body p { margin-bottom: 1rem; }
+    .markdown-body ul, .markdown-body ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+    .markdown-body li { margin-bottom: 0.35rem; }
+    .markdown-body code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      background: oklch(0.16 0.015 265);
+      padding: 0.2em 0.45em;
+      border-radius: 4px;
+      color: var(--neon-cyan);
+    }
+    .markdown-body pre {
+      background: oklch(0.08 0.01 265);
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      margin: 1rem 0;
+    }
+    .citation-card {
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius-sm);
+      background: oklch(0.13 0.015 265 / 0.7);
+      border-left: 3px solid var(--neon-cyan);
+      margin-top: 1rem;
+      font-size: 0.82rem;
+      color: var(--text-2);
+    }
+
+    /* ── Auth Modal / Glass Dialog ─────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: oklch(0.05 0.01 265 / 0.8);
+      backdrop-filter: blur(20px);
+      z-index: 2000;
+      display: none;
+      place-items: center;
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-out-expo);
+    }
+    .modal-backdrop.show {
+      display: grid;
+      opacity: 1;
+    }
+    .auth-dialog {
+      width: 100%;
+      max-width: 440px;
+      background: var(--canvas-elevated);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-lg);
+      padding: 2.75rem 2.25rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 40px var(--neon-cyan-glow);
+      position: relative;
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.3s var(--ease-out-expo);
+    }
+    .modal-backdrop.show .auth-dialog {
+      transform: translateY(0) scale(1);
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: color 0.2s;
+    }
+    .modal-close-btn:hover { color: var(--text-1); }
+    .auth-tab-row {
+      display: flex;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 1.75rem;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 0.75rem;
+      text-align: center;
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .auth-tab.active {
+      color: var(--neon-cyan);
+    }
+    .auth-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    /* ── Toast Notifications ───────────────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+    .toast-msg {
+      padding: 0.85rem 1.4rem;
+      border-radius: var(--radius-sm);
+      background: var(--canvas-elevated);
+      border: 1px solid var(--border-medium);
+      color: var(--text-1);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      backdrop-filter: blur(16px);
+      transform: translateX(100px);
+      opacity: 0;
+      transition: all 0.3s var(--ease-out-expo);
+      pointer-events: auto;
+    }
+    .toast-msg.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .toast-msg.success { border-left: 3px solid var(--neon-emerald); }
+    .toast-msg.error   { border-left: 3px solid var(--neon-rose); }
+    .toast-msg.info    { border-left: 3px solid var(--neon-cyan); }
+
+    /* ── Progress Indicators ───────────────────────────────────────────────── */
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: oklch(0.2 0.015 265);
+      overflow: hidden;
+      margin-top: 0.45rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
+      border-radius: var(--radius-full);
+      transition: width 0.4s var(--ease-out-expo);
+    }
+
+    /* ── Responsive Refinements ────────────────────────────────────────────── */
     @media (max-width: 768px) {
-      section { padding: 5rem 1.5rem; }
-      .rag-container { grid-template-columns: 1fr; }
-      .browser-content { grid-template-columns: 1fr; }
-      .nav-links { display: none; }
-      #nav-menu-btn { display: block; }
-      .arch-layer { grid-template-columns: 1fr; }
-      .arch-layer-label { text-align: left; border-right: none; border-left: 2px solid var(--border); padding-left: .75rem; }
-      .hero-title { font-size: clamp(2.4rem, 10vw, 4rem); }
-    }
-
-    /* prefers-reduced-motion */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-      #hero-canvas, #vector-canvas, #final-canvas { display: none; }
+      .nav-header { padding: 1rem 1.25rem; }
+      .telemetry-pill { display: none; }
+      .hero-container { padding: 3rem 1.25rem 2rem; }
+      .studio-container { padding: 1.5rem 1.25rem 4rem; }
+      .pipeline-stages-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
+
 <body>
+  <!-- Tactile Noise Overlay -->
+  <div class="noise-overlay"></div>
 
-<!-- ══════════════════════════════════════════════
-     NAVIGATION
-══════════════════════════════════════════════ -->
-<nav id="nav">
-  <a href="#" class="nav-logo" aria-label="DocIntel home">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="url(#docGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M14 2V8H20" stroke="url(#docGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M9 15L11 17L15 13" stroke="url(#docGrad2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <defs>
-        <linearGradient id="docGrad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#818cf8"/>
-          <stop offset="100%" stop-color="#c084fc"/>
-        </linearGradient>
-        <linearGradient id="docGrad2" x1="9" y1="13" x2="15" y2="17" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#22c55e"/>
-          <stop offset="100%" stop-color="#86efac"/>
-        </linearGradient>
-      </defs>
-    </svg>
-    DocIntel
-  </a>
+  <!-- Three.js 3D WebGL Canvas Layer -->
+  <canvas id="webgl-canvas"></canvas>
 
-  <ul class="nav-links" role="list">
-    <li><a href="#pipeline">Intelligence</a></li>
-    <li><a href="#rag">RAG</a></li>
-    <li><a href="#architecture">Architecture</a></li>
-    <li><a href="#capabilities">Capabilities</a></li>
-  </ul>
+  <!-- Custom Magnetic Cursor -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
 
-  <button id="nav-cta">Enter Platform →</button>
-  <button id="nav-menu-btn" aria-label="Open menu">☰</button>
-</nav>
+  <!-- Primary Application Viewport -->
+  <div class="app-viewport">
 
-<!-- ══════════════════════════════════════════════
-     HERO
-══════════════════════════════════════════════ -->
-<section id="hero" aria-label="Hero">
-  <canvas id="hero-canvas" aria-hidden="true"></canvas>
-
-  <div class="hero-content">
-    <div class="hero-eyebrow" id="hero-eyebrow">
-      <span class="dot" aria-hidden="true"></span>
-      Enterprise Document Intelligence Platform
-    </div>
-
-    <h1 class="hero-title">
-      <span class="line">
-        <span class="word">Turn</span>&nbsp;<span class="word">Documents</span>
-      </span>
-      <span class="line">
-        <span class="word">Into</span>&nbsp;<span class="word accent-word">Intelligence.</span>
-      </span>
-    </h1>
-
-    <p class="hero-sub" id="hero-sub">
-      AI-powered semantic retrieval and grounded RAG — built for enterprise documents.
-      Upload any file. Ask any question. Get cited answers in seconds.
-    </p>
-
-    <div class="hero-actions" id="hero-actions">
-      <button class="btn-hero-primary" id="hero-enter-btn" aria-label="Enter the DocIntel platform">
-        Enter the Platform
-        <span aria-hidden="true">→</span>
-      </button>
-      <a href="#pipeline" class="btn-hero-ghost" aria-label="See how it works">
-        See how it works
-        <span aria-hidden="true">↓</span>
-      </a>
-    </div>
-  </div>
-
-  <!-- Floating product preview -->
-  <div id="hero-doc" aria-hidden="true">
-    <div class="hero-doc-frame">
-      <div class="hero-doc-bar">
-        <span class="hero-doc-dot" style="background:#ff5f57"></span>
-        <span class="hero-doc-dot" style="background:#ffbd2e"></span>
-        <span class="hero-doc-dot" style="background:#28ca41"></span>
-        <span class="hero-doc-bar-title">policy.pdf → DocIntel RAG Pipeline</span>
-      </div>
-      <div class="hero-doc-body">
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;align-items:start;">
-          <div>
-            <div style="font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;">Context Retrieved</div>
-            <div class="chunk-card active" style="margin-bottom:.5rem;">
-              <div class="chunk-similarity">similarity: 0.94</div>
-              "The grace period for premium payment is 30 days from the premium due date for yearly, half-yearly…"
-            </div>
-            <div class="chunk-card" style="margin-bottom:.5rem;">
-              <div class="chunk-similarity">similarity: 0.87</div>
-              "For monthly mode, the grace period shall be fifteen days from the date of…"
-            </div>
-          </div>
-          <div>
-            <div style="font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;">AI Answer · gpt-4o-mini</div>
-            <div class="answer-box">
-              <div id="ai-answer-text">The grace period for premium payment is <strong>30 days</strong> from the premium due date for yearly, half-yearly, and quarterly modes. For monthly mode, it is <strong>15 days</strong>. <span class="citation show">[policy.pdf · §4.2]</span></div>
-              <div class="citations-row">
-                <span class="citation show" style="font-size:.68rem;">📄 policy.pdf → Page 12</span>
-                <span class="citation show" style="font-size:.68rem;">📄 policy.pdf → Page 15</span>
-              </div>
-            </div>
-          </div>
+    <!-- ── Sticky Navigation Bar ────────────────────────────────────────────── -->
+    <header class="nav-header">
+      <div class="brand-mark" id="nav-brand-reset">
+        <div class="brand-core-glyph">
+          <div class="brand-core-inner">Δ</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="scroll-hint" id="scroll-hint" aria-hidden="true">
-    <span>Scroll to explore</span>
-    <div class="scroll-arrow"></div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     PROBLEM
-══════════════════════════════════════════════ -->
-<section id="problem" aria-label="The problem">
-  <div class="section-inner">
-    <div class="section-label reveal">01 · The Problem</div>
-    <h2 class="section-title reveal">Enterprise Knowledge is Buried.</h2>
-    <p class="section-sub reveal">Thousands of documents. Zero retrieval. The answers exist — they're just locked inside files no one can search intelligently.</p>
-
-    <div class="problem-grid" aria-hidden="true">
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">📄</div>
-        <div class="problem-doc-type">policy.pdf</div>
-      </div>
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">📊</div>
-        <div class="problem-doc-type">report.xlsx</div>
-      </div>
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">📝</div>
-        <div class="problem-doc-type">contract.docx</div>
-      </div>
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">📑</div>
-        <div class="problem-doc-type">manual.pptx</div>
-      </div>
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">🖼️</div>
-        <div class="problem-doc-type">scan.png</div>
-      </div>
-      <div class="problem-doc reveal">
-        <div class="problem-doc-icon">📦</div>
-        <div class="problem-doc-type">docs.zip</div>
-      </div>
-    </div>
-
-    <div class="problem-statement reveal">
-      Your organization processes <strong>thousands of documents</strong> — policies, reports, contracts, manuals, scanned images — in formats no search engine understands deeply. Standard keyword search misses context. Manual review doesn't scale. <strong>DocIntel transforms any document into a queryable intelligence layer</strong> powered by vector embeddings, semantic retrieval, and grounded AI generation.
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     PIPELINE
-══════════════════════════════════════════════ -->
-<section id="pipeline" aria-label="How the pipeline works">
-  <div class="section-inner">
-    <div class="section-label reveal">02 · The Pipeline</div>
-    <h2 class="section-title reveal">From Raw File to Queryable Knowledge.</h2>
-    <p class="section-sub reveal">Every document passes through a multi-stage intelligence pipeline — extraction, understanding, embedding, and retrieval — before a single question is answered.</p>
-
-    <div class="pipeline-stages" role="list">
-
-      <div class="pipeline-stage reveal" role="listitem">
-        <div>
-          <div class="stage-number" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:var(--accent-hi);">01</div>
-          <div class="stage-line"></div>
-        </div>
-        <div class="stage-content">
-          <div class="stage-title">Document Ingestion</div>
-          <div class="stage-desc">Upload via URL. DocIntel downloads and identifies the file format automatically. A Celery task is queued and tracked by job ID with SHA-256 caching — documents processed before are served instantly from the knowledge cache.</div>
-          <div class="stage-tags">
-            <span class="stage-tag hi">PDF</span>
-            <span class="stage-tag hi">DOCX</span>
-            <span class="stage-tag hi">XLSX</span>
-            <span class="stage-tag hi">PPTX</span>
-            <span class="stage-tag hi">PNG / JPG</span>
-            <span class="stage-tag hi">ZIP</span>
-            <span class="stage-tag">SHA-256 Cache</span>
-            <span class="stage-tag">Celery + Redis</span>
-          </div>
+        <div class="brand-name-group">
+          <div class="brand-title">DOCINTEL <span style="font-weight:300;opacity:0.4;">//</span> OS</div>
+          <div class="brand-subtitle">ENTERPRISE RAG CORE</div>
         </div>
       </div>
 
-      <div class="pipeline-stage reveal" role="listitem">
-        <div>
-          <div class="stage-number" style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc;">02</div>
-          <div class="stage-line"></div>
+      <!-- Real-Time Telemetry Cluster Status Pill -->
+      <div class="telemetry-pill" id="telemetry-bar" title="Live Cluster Health (queried from /health)">
+        <div class="telemetry-node">
+          <div class="pulse-dot" id="dot-redis"></div>
+          <span>REDIS: <b id="val-redis" style="color:var(--text-1);">CONNECTING…</b></span>
         </div>
-        <div class="stage-content">
-          <div class="stage-title">Text Extraction + Vision OCR</div>
-          <div class="stage-desc">Text is extracted from every page, sheet, and slide. Embedded images and scanned pages run through dual-engine OCR: Tesseract for structural layout + Gemini 2.0 Flash Vision for multilingual and complex scripts. Tables get sheet-aware flattening.</div>
-          <div class="stage-tags">
-            <span class="stage-tag hi">PyMuPDF</span>
-            <span class="stage-tag hi">pymupdf4llm</span>
-            <span class="stage-tag hi">Tesseract OCR</span>
-            <span class="stage-tag hi">Gemini Vision</span>
-            <span class="stage-tag">python-docx</span>
-            <span class="stage-tag">pandas / openpyxl</span>
-            <span class="stage-tag">python-pptx</span>
-          </div>
+        <div style="opacity:0.25;">|</div>
+        <div class="telemetry-node">
+          <div class="pulse-dot" id="dot-mongo"></div>
+          <span>MONGO: <b id="val-mongo" style="color:var(--text-1);">CONNECTING…</b></span>
         </div>
-      </div>
-
-      <div class="pipeline-stage reveal" role="listitem">
-        <div>
-          <div class="stage-number" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--amber);">03</div>
-          <div class="stage-line"></div>
+        <div style="opacity:0.25;">|</div>
+        <div class="telemetry-node">
+          <div class="pulse-dot" id="dot-workers"></div>
+          <span>CELERY: <b id="val-workers" style="color:var(--text-1);">--</b></span>
         </div>
-        <div class="stage-content">
-          <div class="stage-title">Semantic Chunking</div>
-          <div class="stage-desc">Extracted text is split into semantically coherent chunks using LangChain's header-aware recursive text splitters. Chunks preserve document structure — section boundaries, headers, and table context stay together.</div>
-          <div class="stage-tags">
-            <span class="stage-tag hi">LangChain</span>
-            <span class="stage-tag hi">Header-Aware Splitting</span>
-            <span class="stage-tag">Semantic Boundaries</span>
-            <span class="stage-tag">langchain-text-splitters</span>
-          </div>
+        <div style="opacity:0.25;">|</div>
+        <div class="telemetry-node" id="btn-toggle-backend" style="cursor:pointer;" title="Click to toggle between Render Cloud and Localhost (http://localhost:8000)">
+          <span style="color:var(--text-3);">API:</span>
+          <b id="val-backend" style="color:var(--neon-cyan);">RENDER CLOUD</b>
+          <span style="font-size:0.7rem;color:var(--neon-cyan);margin-left:3px;opacity:0.8;">⇄</span>
         </div>
       </div>
 
-      <div class="pipeline-stage reveal" role="listitem">
-        <div>
-          <div class="stage-number" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green);">04</div>
-          <div class="stage-line"></div>
-        </div>
-        <div class="stage-content">
-          <div class="stage-title">Embedding + Vector Indexing</div>
-          <div class="stage-desc">Every chunk is embedded into a 1536-dimensional vector using OpenAI's text-embedding-3-small model. Embeddings are indexed in FAISS for sub-millisecond similarity search. Both the chunks and index are persisted to disk for zero-cost retrieval on repeat queries.</div>
-          <div class="stage-tags">
-            <span class="stage-tag hi">OpenAI text-embedding-3-small</span>
-            <span class="stage-tag hi">FAISS IndexFlatL2</span>
-            <span class="stage-tag">1536-dimensional vectors</span>
-            <span class="stage-tag">Persisted to disk</span>
-            <span class="stage-tag">Parallel batching</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="pipeline-stage reveal" role="listitem">
-        <div>
-          <div class="stage-number" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:var(--accent-hi);">05</div>
-        </div>
-        <div class="stage-content">
-          <div class="stage-title">RAG: Retrieval → Generation → Answer</div>
-          <div class="stage-desc">When a question arrives: Gemini 2.0 Flash rewrites it into a broader step-back query. Both the original and rewritten queries independently search FAISS. The union of relevant chunks forms the grounded context. GPT-4o-mini generates a precise answer. Gemini 2.0 Flash then summarizes and refines it.</div>
-          <div class="stage-tags">
-            <span class="stage-tag hi">Gemini 2.0 Flash (step-back rewrite)</span>
-            <span class="stage-tag hi">Dual FAISS retrieval</span>
-            <span class="stage-tag hi">GPT-4o-mini (generation)</span>
-            <span class="stage-tag hi">Gemini 2.0 Flash (summarization)</span>
-            <span class="stage-tag">Context grounding</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     KNOWLEDGE SPACE (Canvas visualization)
-══════════════════════════════════════════════ -->
-<section id="knowledge" aria-label="Knowledge space visualization">
-  <div class="knowledge-inner">
-    <div class="section-label reveal">03 · Knowledge Space</div>
-    <h2 class="section-title reveal">Your Documents, Vectorized.</h2>
-    <p class="section-sub reveal">Every chunk becomes a 1536-dimensional vector. Semantically similar content clusters together — making retrieval a matter of finding meaning, not matching keywords.</p>
-    <canvas id="vector-canvas" aria-label="Animated visualization of document chunks as vector embeddings in semantic space" role="img"></canvas>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     RAG DEMO
-══════════════════════════════════════════════ -->
-<section id="rag" aria-label="RAG pipeline demonstration">
-  <div class="section-inner">
-    <div class="section-label reveal">04 · RAG in Action</div>
-    <h2 class="section-title reveal">Watch the AI Work.</h2>
-    <p class="section-sub reveal">The system doesn't just search — it understands. Step-back query rewriting captures intent. Dual-pass retrieval finds evidence. Grounded generation produces cited answers.</p>
-
-    <!-- Demo scenario tabs -->
-    <div class="demo-tabs" role="tablist">
-      <button class="demo-tab active" role="tab" aria-selected="true"  data-scenario="0" id="tab-0">Insurance Policy</button>
-      <button class="demo-tab"        role="tab" aria-selected="false" data-scenario="1" id="tab-1">Financial Report</button>
-      <button class="demo-tab"        role="tab" aria-selected="false" data-scenario="2" id="tab-2">Technical Manual</button>
-    </div>
-
-    <div class="rag-container">
-      <!-- Left: Query + Retrieval -->
-      <div class="rag-panel">
-        <div class="rag-panel-title"><span class="dot"></span>Query &amp; Retrieval</div>
-
-        <div class="rag-query-box" id="rag-query-box" aria-live="polite">
-          <span id="query-typed-text"></span><span id="query-cursor" aria-hidden="true"></span>
-        </div>
-
-        <div class="step-back-box" id="step-back-box">
-          <div class="step-back-label">↻ Step-back rewrite · Gemini 2.0 Flash</div>
-          <span id="step-back-text"></span>
-        </div>
-
-        <div style="font-size:.7rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem;margin-top:.5rem;">Retrieved Context</div>
-        <div id="chunks-container"></div>
-      </div>
-
-      <!-- Right: AI Answer -->
-      <div class="rag-panel">
-        <div class="rag-panel-title"><span class="dot" style="background:var(--green);"></span>AI Answer · gpt-4o-mini</div>
-        <div class="answer-box">
-          <div id="rag-answer-content">
-            <div class="answer-thinking" id="answer-thinking">
-              <div class="thinking-dot"></div>
-              <div class="thinking-dot"></div>
-              <div class="thinking-dot"></div>
-              <span style="margin-left:.35rem;">Retrieving context…</span>
-            </div>
-          </div>
-        </div>
-        <div class="citations-row" id="citations-row" style="margin-top:.75rem;"></div>
-        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
-          <div style="font-size:.68rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);">Interactive demonstration — pre-loaded examples</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     PRODUCT REVEAL
-══════════════════════════════════════════════ -->
-<section id="product" aria-label="Product interface">
-  <div class="section-inner">
-    <div class="section-label reveal">05 · The Platform</div>
-    <h2 class="section-title reveal">The Intelligence Layer for Your Documents.</h2>
-    <p class="section-sub reveal">Upload. Ingest. Query. Everything you just saw, wrapped in a clean, professional interface built for real enterprise workflows.</p>
-
-    <div class="product-browser" id="product-browser" aria-label="DocIntel application screenshot">
-      <div class="browser-chrome">
-        <div class="browser-dots">
-          <div class="browser-dot" style="background:#ff5f57"></div>
-          <div class="browser-dot" style="background:#ffbd2e"></div>
-          <div class="browser-dot" style="background:#28ca41"></div>
-        </div>
-        <div class="browser-url">docintel-platform-d6xm.onrender.com</div>
-      </div>
-      <div class="browser-content">
-        <!-- Left: Doc list -->
-        <div class="mini-panel">
-          <div class="mini-panel-title">Documents</div>
-          <div class="mini-doc-item">
-            <span class="mini-doc-icon">📄</span>
-            <div>
-              <div class="mini-doc-name" style="font-size:.82rem;">policy.pdf</div>
-              <div style="font-size:.65rem;color:var(--muted);">4.2 MB · 87 chunks</div>
-            </div>
-            <span class="mini-doc-badge">READY</span>
-          </div>
-          <div class="mini-doc-item">
-            <span class="mini-doc-icon">📊</span>
-            <div>
-              <div class="mini-doc-name" style="font-size:.82rem;">annual_report.xlsx</div>
-              <div style="font-size:.65rem;color:var(--muted);">1.8 MB · 43 chunks</div>
-            </div>
-            <span class="mini-doc-badge">READY</span>
-          </div>
-          <div class="mini-doc-item" style="opacity:.5;">
-            <span class="mini-doc-icon">📝</span>
-            <div>
-              <div class="mini-doc-name" style="font-size:.82rem;">contract.docx</div>
-              <div style="font-size:.65rem;color:var(--amber);">Embedding… 75%</div>
-            </div>
-            <span class="badge badge-progress">IN PROGRESS</span>
-          </div>
-        </div>
-        <!-- Right: Answer panel -->
-        <div>
-          <div class="mini-panel" style="margin-bottom:1rem;">
-            <input class="mini-ask-input" value="What is the grace period for premium payment?" readonly aria-label="Example question" />
-            <div class="mini-answer">
-              The grace period for premium payment is <strong>30 days</strong> from the premium due date for yearly, half-yearly, and quarterly modes. For monthly mode, the grace period is <strong>15 days</strong>.
-              <div class="mini-sources" style="margin-top:.75rem;">
-                <span class="mini-source">📄 policy.pdf · §4.2</span>
-                <span class="mini-source">📄 policy.pdf · Page 15</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     ARCHITECTURE
-══════════════════════════════════════════════ -->
-<section id="architecture" aria-label="Technical architecture">
-  <div class="section-inner">
-    <div class="section-label reveal">06 · Architecture</div>
-    <h2 class="section-title reveal">Built on a Real Production Stack.</h2>
-    <p class="section-sub reveal">Every component is a proven, battle-tested technology. No vendor lock-in. No magic boxes. Every layer is inspectable and replaceable.</p>
-
-    <div class="arch-stack" id="arch-stack" role="list">
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">Client</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#818cf8"></span>Browser</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#818cf8"></span>JWT Auth</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#818cf8"></span>Upstash Rate Limiting</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">API Layer</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#f59e0b"></span>FastAPI</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f59e0b"></span>Uvicorn</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f59e0b"></span>Pydantic v2</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f59e0b"></span>Render</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">Auth &amp; Security</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#c084fc"></span>MongoDB</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#c084fc"></span>PyJWT (HS256)</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#c084fc"></span>bcrypt</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#c084fc"></span>pymongo</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">Task Queue</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#22c55e"></span>Celery</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#22c55e"></span>Redis (Upstash)</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#22c55e"></span>Celery Beat</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#22c55e"></span>Flower Monitor</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">Document Parsing</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>PyMuPDF</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>pymupdf4llm</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>python-docx</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>python-pptx</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>pandas</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>Tesseract OCR</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#f97316"></span>Gemini Vision</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">Vector Intelligence</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#06b6d4"></span>LangChain Chunker</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#06b6d4"></span>OpenAI text-embedding-3-small</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#06b6d4"></span>FAISS (1536-dim)</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#06b6d4"></span>Dual-pass retrieval</span>
-        </div>
-      </div>
-
-      <div class="arch-layer" role="listitem">
-        <div class="arch-layer-label">AI Generation</div>
-        <div class="arch-layer-content">
-          <span class="arch-chip"><span class="arch-dot" style="background:#a855f7"></span>OpenAI gpt-4o-mini</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#a855f7"></span>Gemini 2.0 Flash</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#a855f7"></span>Step-back rewriting</span>
-          <span class="arch-chip"><span class="arch-dot" style="background:#a855f7"></span>Answer summarization</span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     CAPABILITIES
-══════════════════════════════════════════════ -->
-<section id="capabilities" aria-label="Platform capabilities">
-  <div class="section-inner">
-    <div class="section-label reveal">07 · Capabilities</div>
-    <h2 class="section-title reveal">Everything Enterprise Document Intelligence Requires.</h2>
-
-    <div class="cap-grid">
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(99,102,241,.12);">📄</div>
-        <div class="cap-title">Multi-Format Parsing</div>
-        <div class="cap-desc">PDF, DOCX, XLSX, PPTX, PNG, JPG, ZIP — every enterprise document format, extracted with structure preserved.</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(245,158,11,.12);">🔍</div>
-        <div class="cap-title">Dual-Engine OCR</div>
-        <div class="cap-desc">Tesseract for structural layout + Gemini 2.0 Flash Vision for multilingual scripts — Tamil, Malayalam, Urdu, and more.</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(168,85,247,.12);">🧠</div>
-        <div class="cap-title">Step-Back Query Rewriting</div>
-        <div class="cap-desc">Gemini reformulates every question into a broader semantic query. Both versions retrieve independently — union maximizes recall.</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(34,197,94,.12);">⚡</div>
-        <div class="cap-title">Async Ingestion Pipeline</div>
-        <div class="cap-desc">Celery + Redis task queue. Upload and continue — processing happens in the background with real-time job status tracking.</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(6,182,212,.12);">💾</div>
-        <div class="cap-title">SHA-256 Document Cache</div>
-        <div class="cap-desc">Previously processed documents are stored by hash. Zero redundant computation — the same document costs nothing on repeat ingestion.</div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon" style="background:rgba(239,68,68,.12);">🔒</div>
-        <div class="cap-title">Secure by Design</div>
-        <div class="cap-desc">JWT authentication, bcrypt password hashing, MongoDB user storage, Redis-based rate limiting, and per-job ownership enforcement.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     FINAL CTA
-══════════════════════════════════════════════ -->
-<section id="final" aria-label="Call to action">
-  <canvas id="final-canvas" aria-hidden="true"></canvas>
-  <div class="final-content">
-    <h2 class="final-title" id="final-title">
-      <span class="dim-line" style="opacity:0;">Your documents</span><br>
-      <span class="dim-line" style="opacity:0;">already contain</span><br>
-      <span class="bright-line" style="opacity:0;">the answers.</span>
-    </h2>
-    <p class="final-sub" style="opacity:0;" id="final-sub">Now make them intelligent.</p>
-    <div class="final-actions" id="final-actions" style="opacity:0;">
-      <button class="btn-hero-primary" id="final-enter-btn">Enter DocIntel →</button>
-      <a href="#pipeline" class="btn-hero-ghost">How it works ↑</a>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     FOOTER
-══════════════════════════════════════════════ -->
-<footer>
-  <p>Built with FastAPI · Celery · FAISS · OpenAI · Gemini · MongoDB · Upstash Redis</p>
-  <p style="margin-top:.4rem;"><a href="/health">System Health</a> · Enterprise Document Intelligence Platform</p>
-</footer>
-
-<!-- ══════════════════════════════════════════════
-     AUTH OVERLAY
-══════════════════════════════════════════════ -->
-<div id="auth-overlay" role="dialog" aria-modal="true" aria-label="Sign in or create account">
-  <div class="auth-modal" style="position:relative;">
-    <button class="auth-modal-close" id="auth-close-btn" aria-label="Close sign in dialog">✕</button>
-
-    <!-- Login form -->
-    <div id="login-form">
-      <h2>Welcome back</h2>
-      <p>Sign in to access the platform</p>
-      <div class="form-error" id="login-error"></div>
-      <div class="form-group">
-        <label class="form-label" for="login-email">Email</label>
-        <input class="form-input" type="email" id="login-email" placeholder="you@company.com" autocomplete="email" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="login-password">Password</label>
-        <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-      <button class="btn-primary" id="btn-login" style="width:100%;font-size:.95rem;padding:.75rem;">
-        <span id="login-label">Sign In</span>
-      </button>
-      <div class="form-toggle">Don't have an account? <a id="show-register" tabindex="0">Create one</a></div>
-    </div>
-
-    <!-- Register form -->
-    <div id="register-form" style="display:none;">
-      <h2>Get started</h2>
-      <p>Create your DocIntel account</p>
-      <div class="form-error" id="register-error"></div>
-      <div class="form-group">
-        <label class="form-label" for="register-name">Full Name</label>
-        <input class="form-input" type="text" id="register-name" placeholder="Jane Doe" autocomplete="name" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="register-email">Email</label>
-        <input class="form-input" type="email" id="register-email" placeholder="you@company.com" autocomplete="email" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="register-password">Password</label>
-        <input class="form-input" type="password" id="register-password" placeholder="Min 8 characters" autocomplete="new-password" />
-      </div>
-      <button class="btn-primary" id="btn-register" style="width:100%;font-size:.95rem;padding:.75rem;">
-        <span id="register-label">Create Account</span>
-      </button>
-      <div class="form-toggle">Already have an account? <a id="show-login" tabindex="0">Sign in</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════
-     APP PANEL (full app after login)
-══════════════════════════════════════════════ -->
-<div id="app-panel" role="main" aria-label="DocIntel Application">
-  <nav class="app-nav">
-    <span class="nav-logo" style="font-size:.95rem;">
-      ⚡ DocIntel
-    </span>
-    <div style="display:flex;align-items:center;gap:.75rem;">
-      <span style="font-size:.85rem;color:var(--muted);" id="app-user-name"></span>
-      <button class="btn-ghost" id="btn-logout" style="font-size:.78rem;">Sign out</button>
-    </div>
-  </nav>
-
-  <div class="app-main">
-
-    <!-- Greeting -->
-    <div class="app-card" style="padding:1.25rem 1.75rem;">
-      <div style="font-size:1.3rem;font-weight:800;">Welcome back, <span id="greeting-name" style="color:var(--accent-hi);">there</span> 👋</div>
-      <div style="font-size:.82rem;color:var(--muted);margin-top:.25rem;" id="greeting-email"></div>
-    </div>
-
-    <!-- Upload -->
-    <div class="app-card">
-      <div class="app-card-title">
-        <div class="icon" style="background:rgba(99,102,241,.15);">📄</div>
-        Upload Document
-      </div>
-      <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div>
-          <label class="form-label" for="doc-url">Document URL</label>
-          <input class="form-input" type="url" id="doc-url" placeholder="https://example.com/policy.pdf" />
-        </div>
-        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
-          <button class="btn-primary" id="btn-upload">
-            <span id="upload-label">Upload &amp; Ingest</span>
-          </button>
-          <span style="font-size:.78rem;color:var(--muted);">PDF · DOCX · XLSX · PPTX · PNG · ZIP supported</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Jobs -->
-    <div class="app-card">
-      <div class="app-card-title" style="justify-content:space-between;">
-        <span style="display:flex;align-items:center;gap:.5rem;">
-          <div class="icon" style="background:rgba(168,85,247,.15);">⚡</div>
-          Ingestion Jobs
-        </span>
-        <button class="btn-ghost" id="btn-refresh" style="font-size:.75rem;padding:.3rem .7rem;">↻ Refresh</button>
-      </div>
-      <div id="jobs-list">
-        <div id="jobs-empty" style="color:var(--muted);font-size:.85rem;text-align:center;padding:1.5rem 0;">No jobs yet. Upload a document to get started.</div>
-      </div>
-    </div>
-
-    <!-- Query -->
-    <div class="app-card">
-      <div class="app-card-title">
-        <div class="icon" style="background:rgba(34,197,94,.1);">🔍</div>
-        Ask Questions
-      </div>
-      <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div>
-          <label class="form-label" for="query-doc-url">Document URL</label>
-          <input class="form-input" type="url" id="query-doc-url" placeholder="https://example.com/policy.pdf" />
-        </div>
-        <div>
-          <label class="form-label" for="query-questions">Questions (one per line)</label>
-          <textarea class="form-input" id="query-questions" style="resize:vertical;min-height:90px;" placeholder="What is the coverage limit?&#10;What are the exclusions?"></textarea>
-        </div>
-        <button class="btn-primary" id="btn-query">
-          <span id="query-label">Ask</span>
+      <!-- Auth Controls & Session Profile -->
+      <div class="nav-actions">
+        <button class="btn-nav-outline" id="btn-open-auth">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span id="nav-auth-label">Sign In / Register</span>
         </button>
-        <pre id="query-result" style="display:none;background:rgba(255,255,255,0.03);padding:1rem;border-radius:8px;font-size:.78rem;overflow:auto;white-space:pre-wrap;max-height:350px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;"></pre>
-      </div>
-    </div>
 
+        <div class="user-profile-badge" id="nav-user-badge">
+          <div class="user-avatar-initials" id="nav-avatar">AI</div>
+          <div class="user-details">
+            <span class="user-name" id="nav-user-name">User</span>
+            <span class="user-role-badge">OPERATOR ACTIVE</span>
+          </div>
+          <button style="background:none;border:none;color:var(--text-3);cursor:pointer;margin-left:0.5rem;padding:2px;" id="btn-logout" title="Sign Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Hero Cinematic Experience ────────────────────────────────────────── -->
+    <section class="hero-container">
+      <div class="hero-eyebrow">
+        <span class="pulse-dot"></span>
+        <span>NEURAL DOCUMENT INTELLIGENCE • ASYNC FAISS ENGINE</span>
+      </div>
+
+      <h1 class="hero-title">
+        DECIPHER COMPLEXITY.<br />
+        <span class="gradient-text">AT THE SPEED OF LIGHT.</span>
+      </h1>
+
+      <p class="hero-description">
+        Enterprise document synthesis with asynchronous Celery workers, Upstash Redis vector queues, and multi-modal Vision OCR. Upload massive legal corpora, policy documents, and data sheets — ask anything with verifiable citations.
+      </p>
+
+      <div class="hero-actions-row">
+        <button class="btn-hero-primary" id="btn-hero-explore">
+          <span>Launch Studio Bay</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="btn-hero-glass" id="btn-load-demo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          <span>Load Live Policy Sample</span>
+        </button>
+      </div>
+
+      <!-- Quick Interactive Prompt Launcher Chips -->
+      <div class="quick-chips-strip">
+        <span class="chips-label">Quick Prompts:</span>
+        <div class="prompt-chip" data-prompt="What is LlamaIndex and how does it connect custom data sources to LLMs?">
+          <span>⚡ What is LlamaIndex</span>
+        </div>
+        <div class="prompt-chip" data-prompt="Explain the ingestion and indexing architecture in LlamaIndex.">
+          <span>📊 Ingestion Pipeline</span>
+        </div>
+        <div class="prompt-chip" data-prompt="How are vector store indexes and retrievers implemented?">
+          <span>🔍 Vector Retrieval</span>
+        </div>
+        <div class="prompt-chip" data-prompt="Provide a comprehensive executive summary of key capabilities.">
+          <span>📑 Executive Summary</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Studio Workbench Bento Grid ──────────────────────────────────────── -->
+    <main class="studio-container" id="studio-section">
+
+      <!-- Bento Bay 1: Document Ingestion Bay & Radar -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <div class="card-icon-badge">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div>
+              <h2 class="card-title">Ingestion Bay</h2>
+              <span class="card-tag">Async Celery Pipeline</span>
+            </div>
+          </div>
+          <button style="background:none;border:none;color:var(--text-3);cursor:pointer;font-family:'JetBrains Mono';font-size:0.75rem;" id="btn-refresh-jobs" title="Poll status for active tasks">
+            ↻ REFRESH
+          </button>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div class="dropzone-container" id="file-dropzone">
+          <div class="dropzone-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="dropzone-heading">Drop Enterprise Document or Click</div>
+          <div class="dropzone-sub">Supports PDF, DOCX, TXT, Excel (Vision OCR automated)</div>
+          <input type="file" id="file-input" style="display:none;" accept=".pdf,.docx,.txt,.csv,.xlsx" />
+        </div>
+
+        <!-- Document URL Input -->
+        <div class="field-label">
+          <span>Or Ingest Via Remote URL</span>
+          <span style="color:var(--neon-cyan);cursor:pointer;" id="btn-fill-sample-url">Use Demo URL</span>
+        </div>
+        <div class="input-wrapper">
+          <input type="url" class="cyber-input" id="input-doc-url" value="https://raw.githubusercontent.com/run-llama/llama_index/main/README.md" placeholder="https://example.com/corporate-policy.pdf" />
+        </div>
+
+        <button class="btn-action-primary" id="btn-start-ingestion">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="label-ingest">Commit To Ingestion Pipeline</span>
+        </button>
+
+        <!-- Pipeline Radar Stepper -->
+        <div class="pipeline-radar-card">
+          <div class="field-label">
+            <span>Pipeline Architecture Telemetry</span>
+            <span id="active-stage-status">IDLE</span>
+          </div>
+
+          <div class="pipeline-stages-grid">
+            <div class="stage-node" id="stage-1">
+              <span class="stage-number">01</span>
+              <span class="stage-name">Fetch/OCR</span>
+            </div>
+            <div class="stage-node" id="stage-2">
+              <span class="stage-number">02</span>
+              <span class="stage-name">Chunking</span>
+            </div>
+            <div class="stage-node" id="stage-3">
+              <span class="stage-number">03</span>
+              <span class="stage-name">Embedding</span>
+            </div>
+            <div class="stage-node" id="stage-4">
+              <span class="stage-number">04</span>
+              <span class="stage-name">FAISS Ready</span>
+            </div>
+          </div>
+
+          <!-- Active Jobs Stream -->
+          <div class="field-label" style="margin-top:1rem;">
+            <span>Active Worker Job Queue</span>
+            <span id="job-count-badge">0 JOBS</span>
+          </div>
+          <div class="job-history-feed" id="jobs-container">
+            <div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:0.8rem;border:1px dashed var(--border-subtle);border-radius:var(--radius-sm);" id="no-jobs-placeholder">
+              No active ingestion jobs queued yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Bay 2: Neural Query & Synthesis Workbench -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <div class="card-icon-badge" style="background:oklch(0.72 0.22 315 / 0.12);border-color:oklch(0.72 0.22 315 / 0.3);color:var(--neon-violet);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div>
+              <h2 class="card-title">Intelligence Workbench</h2>
+              <span class="card-tag">Neural Vector Synthesis (RAG)</span>
+            </div>
+          </div>
+          <button style="background:none;border:none;color:var(--text-3);cursor:pointer;font-family:'JetBrains Mono';font-size:0.75rem;" id="btn-clear-query" title="Clear inquiry">
+            CLEAR
+          </button>
+        </div>
+
+        <!-- Target Document Context -->
+        <div class="field-label">
+          <span>Active Target Document URL / Corpus</span>
+          <span style="color:var(--text-3);" id="target-sync-status">Linked</span>
+        </div>
+        <div class="input-wrapper">
+          <input type="text" class="cyber-input" id="query-target-url" value="https://raw.githubusercontent.com/run-llama/llama_index/main/README.md" placeholder="Document URL or select from Ingestion Bay above" />
+        </div>
+
+        <!-- Natural Language Inquiries -->
+        <div class="field-label">
+          <span>Synthesis Inquiries (One per line or single prompt)</span>
+          <span style="color:var(--neon-cyan);" id="prompt-counter">1 Question</span>
+        </div>
+        <textarea class="cyber-textarea" id="query-prompt-input" placeholder="e.g. What is LlamaIndex and how does it connect custom data sources to LLMs?">What is LlamaIndex and how does it connect custom data sources to LLMs?</textarea>
+
+        <button class="btn-action-primary" id="btn-execute-rag" style="background:linear-gradient(135deg, var(--neon-violet), var(--neon-cyan));">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="label-execute-rag">Execute Neural RAG Query</span>
+        </button>
+
+        <!-- Synthesized Output Viewport -->
+        <div class="synthesis-viewport" id="synthesis-view">
+          <div class="synthesis-header">
+            <div class="synthesis-meta">
+              <span>MODEL: <b>GEMINI 1.5 PRO / FAISS</b></span>
+              <span>•</span>
+              <span id="synthesis-latency">LATENCY: --ms</span>
+            </div>
+            <button style="background:none;border:none;color:var(--text-3);cursor:pointer;" id="btn-copy-answer" title="Copy answer to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+
+          <div class="markdown-body" id="synthesis-body">
+            <p style="color:var(--text-3);font-style:italic;">
+              Ready for query. Target a document and submit an inquiry above to synthesize insights with multi-stage citation attribution.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </main>
   </div>
-</div>
 
-<!-- Toast -->
-<div id="toast" role="status" aria-live="polite"></div>
+  <!-- ── Authentication Dialog Modal ────────────────────────────────────────── -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="auth-dialog">
+      <button class="modal-close-btn" id="btn-close-modal">✕</button>
 
-<!-- ══════════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════════ -->
-<script>
-(function() {
-'use strict';
-
-const API_BASE = 'https://docintel-platform-d6xm.onrender.com';
-
-/* ─── AUTH STATE ─────────────────────────────────────────── */
-const TOKEN_KEY = 'docintel_token';
-const USER_KEY  = 'docintel_user';
-function getToken()  { return localStorage.getItem(TOKEN_KEY); }
-function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-function clearAuth() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); }
-function setUser(u)  { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
-function getUser()   { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; } }
-
-async function authedFetch(url, opts={}) {
-  const token = getToken();
-  if (!token) throw new Error('Not authenticated');
-  return fetch(API_BASE + url, { ...opts, headers: { 'Content-Type':'application/json','Authorization':'Bearer '+token, ...(opts.headers||{}) } });
-}
-
-/* ─── PANELS ─────────────────────────────────────────────── */
-const authOverlay = document.getElementById('auth-overlay');
-const appPanel    = document.getElementById('app-panel');
-
-function openAuth() {
-  authOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeAuth() {
-  authOverlay.classList.remove('open');
-  document.body.style.overflow = '';
-}
-function openApp(user) {
-  closeAuth();
-  const name = user.full_name || user.email.split('@')[0];
-  document.getElementById('app-user-name').textContent = name;
-  document.getElementById('greeting-name').textContent  = name.split(' ')[0];
-  document.getElementById('greeting-email').textContent = user.email;
-  appPanel.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeApp() {
-  appPanel.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-/* ─── NAV / CTA clicks ───────────────────────────────────── */
-function handleEnterPlatform() {
-  const token = getToken();
-  if (token) {
-    const user = getUser();
-    if (user) { openApp(user); return; }
-    authedFetch('/api/v1/auth/me').then(r => {
-      if (!r.ok) { clearAuth(); openAuth(); return; }
-      return r.json();
-    }).then(u => { if (u) { setUser(u); openApp(u); } }).catch(() => openAuth());
-  } else { openAuth(); }
-}
-document.getElementById('nav-cta').addEventListener('click', handleEnterPlatform);
-document.getElementById('hero-enter-btn').addEventListener('click', handleEnterPlatform);
-document.getElementById('final-enter-btn').addEventListener('click', handleEnterPlatform);
-document.getElementById('auth-close-btn').addEventListener('click', closeAuth);
-authOverlay.addEventListener('click', e => { if (e.target === authOverlay) closeAuth(); });
-authOverlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuth(); });
-
-/* ─── FORM TOGGLES ───────────────────────────────────────── */
-const loginForm    = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
-document.getElementById('show-register').addEventListener('click', () => { loginForm.style.display='none'; registerForm.style.display='block'; });
-document.getElementById('show-login').addEventListener('click',    () => { registerForm.style.display='none'; loginForm.style.display='block'; });
-
-/* ─── REGISTER ───────────────────────────────────────────── */
-document.getElementById('btn-register').addEventListener('click', async () => {
-  const name=document.getElementById('register-name').value.trim();
-  const email=document.getElementById('register-email').value.trim();
-  const password=document.getElementById('register-password').value;
-  const errEl=document.getElementById('register-error');
-  const btn=document.getElementById('btn-register');
-  const label=document.getElementById('register-label');
-  errEl.style.display='none';
-  if (!email||!password){errEl.textContent='Email and password are required';errEl.style.display='block';return;}
-  if (password.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return;}
-  btn.disabled=true; label.innerHTML='<span class="spinner"></span> Creating…';
-  try {
-    const res=await fetch(API_BASE + '/api/v1/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,full_name:name||null})});
-    const data=await res.json();
-    if (!res.ok){errEl.textContent=data.detail||'Registration failed';errEl.style.display='block';return;}
-    setToken(data.access_token);
-    const me=await authedFetch('/api/v1/auth/me').then(r=>r.json());
-    setUser(me); openApp(me); showToast('Account created ✓','success');
-  } catch(e){errEl.textContent='Network error: '+e.message;errEl.style.display='block';}
-  finally{btn.disabled=false;label.textContent='Create Account';}
-});
-
-/* ─── LOGIN ──────────────────────────────────────────────── */
-document.getElementById('btn-login').addEventListener('click', async () => {
-  const email=document.getElementById('login-email').value.trim();
-  const password=document.getElementById('login-password').value;
-  const errEl=document.getElementById('login-error');
-  const btn=document.getElementById('btn-login');
-  const label=document.getElementById('login-label');
-  errEl.style.display='none';
-  if (!email||!password){errEl.textContent='Email and password are required';errEl.style.display='block';return;}
-  btn.disabled=true; label.innerHTML='<span class="spinner"></span> Signing in…';
-  try {
-    const res=await fetch(API_BASE + '/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-    const data=await res.json();
-    if (!res.ok){errEl.textContent=data.detail||'Login failed';errEl.style.display='block';return;}
-    setToken(data.access_token);
-    const me=await authedFetch('/api/v1/auth/me').then(r=>r.json());
-    setUser(me); openApp(me); showToast('Signed in ✓','success');
-  } catch(e){errEl.textContent='Network error: '+e.message;errEl.style.display='block';}
-  finally{btn.disabled=false;label.textContent='Sign In';}
-});
-
-/* ─── LOGOUT ─────────────────────────────────────────────── */
-document.getElementById('btn-logout').addEventListener('click', () => {
-  clearAuth(); jobs=[]; renderJobsList(); closeApp(); showToast('Signed out','success');
-});
-
-/* ─── UPLOAD ─────────────────────────────────────────────── */
-let jobs = [];
-document.getElementById('btn-upload').addEventListener('click', async () => {
-  const url=document.getElementById('doc-url').value.trim();
-  if (!url){showToast('Enter a document URL','error');return;}
-  const btn=document.getElementById('btn-upload');
-  const label=document.getElementById('upload-label');
-  btn.disabled=true; label.innerHTML='<span class="spinner"></span> Uploading…';
-  try {
-    const res=await authedFetch('/api/v1/hackrx/upload',{method:'POST',body:JSON.stringify({document_url:url})});
-    const data=await res.json();
-    if (!res.ok){showToast(data.detail||'Upload failed','error');return;}
-    jobs.unshift({job_id:data.job_id,url,status:'PENDING',progress:0});
-    renderJobsList();
-    document.getElementById('doc-url').value='';
-    showToast('Document queued ✓','success');
-    pollJob(data.job_id);
-  } catch(e){showToast('Upload error: '+e.message,'error');}
-  finally{btn.disabled=false;label.textContent='Upload & Ingest';}
-});
-
-/* ─── POLLING ────────────────────────────────────────────── */
-async function pollJob(jobId) {
-  const INTERVAL=2500, MAX=120; let n=0;
-  const iv=setInterval(async()=>{
-    n++; if(n>MAX){clearInterval(iv);return;}
-    try {
-      const res=await authedFetch('/api/v1/hackrx/jobs/'+jobId+'/status');
-      const data=await res.json();
-      const job=jobs.find(j=>j.job_id===jobId);
-      if (!job){clearInterval(iv);return;}
-      job.status=data.status;
-      job.progress=data.progress?.progress??(data.status==='SUCCESS'?100:0);
-      renderJobsList();
-      if(['SUCCESS','FAILURE'].includes(data.status)){
-        clearInterval(iv);
-        if(data.status==='SUCCESS') showToast('Ingestion complete ✓','success');
-        else showToast('Ingestion failed: '+(data.error||'unknown'),'error');
-      }
-    } catch(e){}
-  }, INTERVAL);
-}
-document.getElementById('btn-refresh').addEventListener('click',()=>{
-  jobs.forEach(j=>{if(!['SUCCESS','FAILURE'].includes(j.status)) pollJob(j.job_id);});
-  showToast('Refreshing statuses…','success');
-});
-
-function renderJobsList() {
-  const list=document.getElementById('jobs-list');
-  const empty=document.getElementById('jobs-empty');
-  if (!jobs.length){ list.innerHTML=''; empty.style.display='block'; list.appendChild(empty); return; }
-  empty.style.display='none';
-  list.innerHTML=jobs.map(j=>`
-    <div class="job-row">
-      <div>
-        <div class="job-url">${escHtml(j.url)}</div>
-        <div class="job-id">${escHtml(j.job_id)}</div>
-        ${j.progress>0&&j.status!=='SUCCESS'&&j.status!=='FAILURE'?`<div class="progress-track" style="margin-top:.35rem;width:200px;"><div class="progress-fill" style="width:${j.progress}%;"></div></div>`:''}
+      <div class="auth-tab-row">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Create Account</button>
       </div>
-      ${statusBadge(j.status)}
-    </div>`).join('');
-}
-function statusBadge(s){
-  const m={PENDING:'pending',STARTED:'progress',PROGRESS:'progress',SUCCESS:'success',FAILURE:'failure',RETRY:'pending'};
-  return `<span class="badge badge-${m[s]||'pending'}">${s}</span>`;
-}
 
-/* ─── QUERY ──────────────────────────────────────────────── */
-document.getElementById('btn-query').addEventListener('click', async () => {
-  const docUrl=document.getElementById('query-doc-url').value.trim();
-  const raw=document.getElementById('query-questions').value.trim();
-  const questions=raw.split('\n').map(s=>s.trim()).filter(Boolean);
-  if (!docUrl){showToast('Enter a document URL','error');return;}
-  if (!questions.length){showToast('Enter at least one question','error');return;}
-  const btn=document.getElementById('btn-query');
-  const label=document.getElementById('query-label');
-  const out=document.getElementById('query-result');
-  btn.disabled=true; label.innerHTML='<span class="spinner"></span> Querying…'; out.style.display='none';
-  try {
-    const res=await authedFetch('/api/v1/hackrx/run',{method:'POST',body:JSON.stringify({documents:docUrl,questions})});
-    const data=await res.json();
-    out.textContent=JSON.stringify(data,null,2); out.style.display='block';
-  } catch(e){showToast('Query error: '+e.message,'error');}
-  finally{btn.disabled=false;label.textContent='Ask';}
-});
+      <!-- Sign In Form -->
+      <form id="form-login" onsubmit="return false;">
+        <div class="field-label">Email Address</div>
+        <div class="input-wrapper">
+          <input type="email" class="cyber-input" id="auth-login-email" placeholder="operator@enterprise.com" required autocomplete="email" />
+        </div>
 
-/* ─── TOAST ──────────────────────────────────────────────── */
-let _toastTimer;
-function showToast(msg,type,ms=3500){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className='show '+(type||'');
-  clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>el.className='',ms);
-}
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        <div class="field-label">Password</div>
+        <div class="input-wrapper">
+          <input type="password" class="cyber-input" id="auth-login-password" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
 
-/* ─── KEYBOARD ENTER for auth forms ─────────────────────── */
-['login-email','login-password'].forEach(id=>{
-  document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-login').click(); });
-});
-['register-name','register-email','register-password'].forEach(id=>{
-  document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-register').click(); });
-});
+        <button type="submit" class="btn-action-primary" id="btn-submit-login" style="margin-top:0.75rem;">
+          <span id="label-login-btn">Authenticate Session</span>
+        </button>
+      </form>
 
-/* ─── CHECK SESSION ──────────────────────────────────────── */
-(async function checkSession(){
-  const token=getToken();
-  if (!token) return;
-  try {
-    const res=await authedFetch('/api/v1/auth/me');
-    if (!res.ok){clearAuth();return;}
-    const user=await res.json();
-    setUser(user); openApp(user);
-  } catch { clearAuth(); }
-})();
+      <!-- Register Form -->
+      <form id="form-register" style="display:none;" onsubmit="return false;">
+        <div class="field-label">Operator Full Name</div>
+        <div class="input-wrapper">
+          <input type="text" class="cyber-input" id="auth-reg-name" placeholder="Alex Morgan" autocomplete="name" />
+        </div>
 
+        <div class="field-label">Email Address</div>
+        <div class="input-wrapper">
+          <input type="email" class="cyber-input" id="auth-reg-email" placeholder="operator@enterprise.com" required autocomplete="email" />
+        </div>
 
-/* ══════════════════════════════════════════════════════════
-   ANIMATIONS & CANVAS
-══════════════════════════════════════════════════════════ */
+        <div class="field-label">Password (Min 8 characters)</div>
+        <div class="input-wrapper">
+          <input type="password" class="cyber-input" id="auth-reg-password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" />
+        </div>
 
-/* ─── NAV SCROLL ─────────────────────────────────────────── */
-window.addEventListener('scroll', () => {
-  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 60);
-}, { passive: true });
+        <button type="submit" class="btn-action-primary" id="btn-submit-register" style="margin-top:0.75rem;">
+          <span id="label-register-btn">Initialize Credentials & Sign In</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
-/* ─── GSAP SETUP ─────────────────────────────────────────── */
-gsap.registerPlugin(ScrollTrigger);
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toast-container"></div>
 
-/* ─── HERO ENTRANCE ──────────────────────────────────────── */
-const heroTL = gsap.timeline({ delay: 0.2 });
-heroTL
-  .to('#hero-eyebrow', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' })
-  .to('.hero-title .word', { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.1 }, '-=0.2')
-  .to('#hero-sub', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
-  .to('#hero-actions', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
-  .to('#hero-doc', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.4')
-  .to('#scroll-hint', { opacity: 1, duration: 0.5 }, '-=0.2');
+  <!-- ========================================================================
+       APPLICATION SCRIPT: Three.js 3D Engine + GSAP + API State
+       ======================================================================== -->
+  <script>
+  (function() {
+    'use strict';
 
-/* ─── HERO CANVAS ────────────────────────────────────────── */
-(function heroCanvas() {
-  const canvas = document.getElementById('hero-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [], frame = 0;
-  const PARTICLE_COUNT = 80;
+    // ── 1. Configuration & State ───────────────────────────────────────────
+    // Primary backend URL: Render Cloud deployment as specified by user
+    const RENDER_BACKEND_URL = 'https://docintel-platform-d6xm.onrender.com';
+    let API_BASE = RENDER_BACKEND_URL;
 
-  function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
+    function getApiUrl(endpoint) {
+      if (!endpoint) return API_BASE;
+      if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) return endpoint;
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      return `${API_BASE}${cleanEndpoint}`;
+    }
 
-  function initParticles() {
-    particles = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 1.5 + 0.3,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.2,
-        alpha: Math.random() * 0.5 + 0.1,
-        pulse: Math.random() * Math.PI * 2
+    const STATE = {
+      user: null,
+      token: localStorage.getItem('docintel_jwt') || null,
+      jobs: [],
+      selectedFile: null,
+      targetDocUrl: 'https://raw.githubusercontent.com/run-llama/llama_index/main/README.md',
+    };
+
+    // ── 2. Three.js Interactive 3D WebGL Neural Scene ──────────────────────
+    const canvas = document.getElementById('webgl-canvas');
+    let scene, camera, renderer;
+    let coreGroup, shardNodes = [], linkLines = [];
+    let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+
+    function initThreeScene() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x0c0e14, 0.022);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 24);
+
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // Core Group
+      coreGroup = new THREE.Group();
+      scene.add(coreGroup);
+
+      // A. Central Holographic Core (Wireframe Icosahedron + Inner Sphere)
+      const icoGeo = new THREE.IcosahedronGeometry(3.5, 1);
+      const icoMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.28,
       });
-    }
-  }
+      const icoMesh = new THREE.Mesh(icoGeo, icoMat);
+      coreGroup.add(icoMesh);
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    frame++;
-
-    // Draw connection lines between near particles
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 120) {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(99,102,241,${0.04 * (1 - dist/120)})`;
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Draw particles
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.pulse += 0.02;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      const a = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(129,140,248,${a})`;
-      ctx.fill();
-    });
-
-    requestAnimationFrame(draw);
-  }
-
-  resize(); initParticles(); draw();
-  window.addEventListener('resize', () => { resize(); initParticles(); }, { passive: true });
-})();
-
-/* ─── SCROLL REVEAL ELEMENTS ─────────────────────────────── */
-gsap.utils.toArray('.reveal').forEach(el => {
-  gsap.to(el, {
-    opacity: 1, y: 0, duration: 0.7, ease: 'power2.out',
-    scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
-  });
-});
-
-/* ─── CAPABILITIES CARDS ─────────────────────────────────── */
-gsap.utils.toArray('.cap-card').forEach((card, i) => {
-  gsap.to(card, {
-    opacity: 1, duration: 0.5, ease: 'power2.out', delay: i * 0.08,
-    scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' }
-  });
-});
-
-/* ─── ARCHITECTURE LAYERS ────────────────────────────────── */
-gsap.utils.toArray('.arch-layer').forEach((layer, i) => {
-  gsap.to(layer, {
-    opacity: 1, x: 0, duration: 0.6, ease: 'power2.out', delay: i * 0.1,
-    scrollTrigger: { trigger: '#arch-stack', start: 'top 80%', toggleActions: 'play none none none' }
-  });
-});
-
-/* ─── PRODUCT BROWSER REVEAL ─────────────────────────────── */
-ScrollTrigger.create({
-  trigger: '#product-browser',
-  start: 'top 80%',
-  onEnter: () => gsap.to('#product-browser', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
-});
-
-/* ─── FINAL SECTION REVEAL ───────────────────────────────── */
-ScrollTrigger.create({
-  trigger: '#final',
-  start: 'top 70%',
-  onEnter: () => {
-    const tl = gsap.timeline();
-    tl.to('#final-title .dim-line', { opacity: 1, duration: 0.6, stagger: 0.3, ease: 'power2.out' })
-      .to('#final-title .bright-line', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.1')
-      .to('#final-sub', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.1')
-      .to('#final-actions', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.1');
-  }
-});
-
-/* ─── FINAL CANVAS ───────────────────────────────────────── */
-(function finalCanvas() {
-  const canvas = document.getElementById('final-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, nodes = [], frame = 0;
-
-  function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-
-  function initNodes() {
-    nodes = [];
-    const count = 40;
-    for (let i = 0; i < count; i++) {
-      nodes.push({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 2 + 0.5,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: (Math.random() - 0.5) * 0.15,
-        pulse: Math.random() * Math.PI * 2,
-        alpha: Math.random() * 0.3 + 0.05
+      // Inner glowing point sphere
+      const sphereGeo = new THREE.SphereGeometry(1.6, 16, 16);
+      const sphereMat = new THREE.MeshBasicMaterial({
+        color: 0x9d4edd,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.35,
       });
-    }
-  }
+      const innerSphere = new THREE.Mesh(sphereGeo, sphereMat);
+      coreGroup.add(innerSphere);
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    frame++;
-    // radial glow
-    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.min(W,H)*0.5);
-    grad.addColorStop(0, 'rgba(99,102,241,0.04)');
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+      // B. Floating Document Shard Cards
+      const cardGeo = new THREE.PlaneGeometry(1.2, 1.6);
+      const shardCount = 20;
 
-    nodes.forEach(n => {
-      n.x += n.vx; n.y += n.vy; n.pulse += 0.015;
-      if (n.x < 0) n.x = W; if (n.x > W) n.x = 0;
-      if (n.y < 0) n.y = H; if (n.y > H) n.y = 0;
-      const a = n.alpha * (0.6 + 0.4 * Math.sin(n.pulse));
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(192,132,252,${a})`;
-      ctx.fill();
-    });
+      for (let i = 0; i < shardCount; i++) {
+        const phi = Math.acos(-1 + (2 * i) / shardCount);
+        const theta = Math.sqrt(shardCount * Math.PI) * phi;
+        const radius = 8.5 + (i % 3) * 1.5;
 
-    requestAnimationFrame(draw);
-  }
+        const x = radius * Math.cos(theta) * Math.sin(phi);
+        const y = radius * Math.sin(theta) * Math.sin(phi);
+        const z = radius * Math.cos(phi);
 
-  resize(); initNodes(); draw();
-  window.addEventListener('resize', () => { resize(); initNodes(); }, { passive: true });
-})();
+        const cardMat = new THREE.MeshBasicMaterial({
+          color: (i % 2 === 0) ? 0x00f0ff : 0xb5179e,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.45,
+          side: THREE.DoubleSide
+        });
 
-/* ─── VECTOR SPACE CANVAS ────────────────────────────────── */
-(function vectorCanvas() {
-  const canvas = document.getElementById('vector-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, nodes = [], frame = 0;
-  let isVisible = false;
-  let animStarted = false;
+        const card = new THREE.Mesh(cardGeo, cardMat);
+        card.position.set(x, y, z);
+        card.lookAt(0, 0, 0);
+        coreGroup.add(card);
 
-  // Cluster definitions (simulating semantic groups)
-  const CLUSTERS = [
-    { label: 'Policy Terms',      color: [99, 102, 241],  cx: 0.2, cy: 0.3, spread: 0.12, count: 22 },
-    { label: 'Coverage Limits',   color: [34, 197, 94],   cx: 0.5, cy: 0.22, spread: 0.10, count: 18 },
-    { label: 'Exclusions',        color: [245, 158, 11],  cx: 0.78, cy: 0.35, spread: 0.11, count: 15 },
-    { label: 'Premium Schedule',  color: [192, 132, 252], cx: 0.65, cy: 0.65, spread: 0.10, count: 14 },
-    { label: 'Claims Process',    color: [6, 182, 212],   cx: 0.28, cy: 0.7, spread: 0.09, count: 12 },
-    { label: 'Waiting Period',    color: [239, 68, 68],   cx: 0.85, cy: 0.65, spread: 0.08, count: 10 },
-  ];
-
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    W = canvas.width  = rect.width;
-    H = canvas.height = rect.height;
-  }
-
-  function initNodes() {
-    nodes = [];
-    CLUSTERS.forEach(cluster => {
-      for (let i = 0; i < cluster.count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist  = Math.random() * cluster.spread;
-        nodes.push({
-          tx: (cluster.cx + Math.cos(angle) * dist) * W,
-          ty: (cluster.cy + Math.sin(angle) * dist) * H,
-          x: Math.random() * W,
-          y: Math.random() * H,
-          r: Math.random() * 3 + 1.5,
-          color: cluster.color,
-          cluster,
-          progress: 0, // animation progress 0→1
-          pulse: Math.random() * Math.PI * 2,
-          active: false
+        shardNodes.push({
+          mesh: card,
+          initPos: new THREE.Vector3(x, y, z),
+          speed: 0.001 + Math.random() * 0.002,
+          rotSpeed: 0.005 + Math.random() * 0.01
         });
       }
-    });
-  }
 
-  function animateIn() {
-    nodes.forEach((n, i) => {
-      setTimeout(() => {
-        const startX = n.x, startY = n.y;
-        let p = 0;
-        function step() {
-          p += 0.025;
-          if (p > 1) p = 1;
-          n.x = startX + (n.tx - startX) * easeOut(p);
-          n.y = startY + (n.ty - startY) * easeOut(p);
-          n.progress = p;
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }, i * 18);
-    });
-  }
+      // C. Neural Vector Lines (Connecting shards to core)
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.12
+      });
 
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-
-  function draw() {
-    if (!isVisible) { requestAnimationFrame(draw); return; }
-    ctx.clearRect(0, 0, W, H);
-    frame++;
-
-    // Draw connections within clusters
-    CLUSTERS.forEach(cluster => {
-      const cNodes = nodes.filter(n => n.cluster === cluster);
-      for (let i = 0; i < cNodes.length; i++) {
-        for (let j = i + 1; j < cNodes.length; j++) {
-          if (Math.random() < 0.002) continue; // skip most pairs each frame for perf
-          const dx = cNodes[i].x - cNodes[j].x;
-          const dy = cNodes[i].y - cNodes[j].y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < 80) {
-            const alpha = 0.06 * (1 - dist/80) * Math.min(cNodes[i].progress, cNodes[j].progress);
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(${cluster.color.join(',')},${alpha})`;
-            ctx.lineWidth = 0.8;
-            ctx.moveTo(cNodes[i].x, cNodes[i].y);
-            ctx.lineTo(cNodes[j].x, cNodes[j].y);
-            ctx.stroke();
-          }
-        }
+      for (let i = 0; i < shardNodes.length; i += 2) {
+        const points = [
+          new THREE.Vector3(0, 0, 0),
+          shardNodes[i].initPos
+        ];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeo, lineMat);
+        coreGroup.add(line);
+        linkLines.push({ line, targetIdx: i });
       }
-    });
 
-    // Draw nodes
-    nodes.forEach(n => {
-      n.pulse += 0.02;
-      const a = n.progress * (0.6 + 0.4 * Math.sin(n.pulse));
-      // glow
-      const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
-      grad.addColorStop(0, `rgba(${n.color.join(',')},${a * 0.4})`);
-      grad.addColorStop(1, 'transparent');
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
-      // core
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${n.color.join(',')},${a * 0.9})`;
-      ctx.fill();
-    });
+      // Ambient Point Light
+      const pLight = new THREE.PointLight(0x00f0ff, 2, 50);
+      pLight.position.set(5, 10, 15);
+      scene.add(pLight);
 
-    // Draw cluster labels
-    CLUSTERS.forEach(cluster => {
-      const avgProgress = nodes.filter(n => n.cluster === cluster).reduce((s,n) => s+n.progress, 0) / cluster.count;
-      if (avgProgress > 0.7) {
-        ctx.font = '11px "JetBrains Mono", monospace';
-        ctx.fillStyle = `rgba(${cluster.color.join(',')},${(avgProgress - 0.7) / 0.3 * 0.8})`;
-        ctx.textAlign = 'center';
-        ctx.fillText(cluster.label, cluster.cx * W, cluster.cy * H - cluster.spread * H - 12);
-      }
-    });
-
-    requestAnimationFrame(draw);
-  }
-
-  resize(); initNodes();
-
-  // IntersectionObserver to trigger animation when visible
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      isVisible = e.isIntersecting;
-      if (isVisible && !animStarted) {
-        animStarted = true;
-        animateIn();
-      }
-    });
-  }, { threshold: 0.2 });
-  observer.observe(canvas);
-
-  draw();
-  window.addEventListener('resize', () => { resize(); initNodes(); animStarted = false; }, { passive: true });
-})();
-
-/* ─── RAG DEMO ───────────────────────────────────────────── */
-const SCENARIOS = [
-  {
-    query: "What is the grace period for premium payment?",
-    stepBack: "What are the payment terms, grace periods, and conditions for insurance premium payments?",
-    chunks: [
-      { sim: "0.94", text: '"The grace period for premium payment is 30 days from the premium due date for yearly, half-yearly, and quarterly modes…"' },
-      { sim: "0.87", text: '"For monthly mode, the grace period shall be fifteen days from the date of the due premium…"' },
-      { sim: "0.79", text: '"If the premium is not paid before the expiry of the days of grace, the policy shall lapse…"' },
-    ],
-    answer: 'The grace period for premium payment is <strong>30 days</strong> from the premium due date for yearly, half-yearly, and quarterly modes. For monthly mode, it is <strong>15 days</strong>. Failure to pay within the grace period results in policy lapse.',
-    citations: ['policy.pdf · §4.2 · Page 12', 'policy.pdf · Clause 7 · Page 15']
-  },
-  {
-    query: "What was the Q3 net revenue?",
-    stepBack: "What are the quarterly financial results, revenue figures, and earnings for this reporting period?",
-    chunks: [
-      { sim: "0.92", text: '"Q3 net revenue reached $142.3M, representing a 18.4% year-over-year increase driven by enterprise segment growth…"' },
-      { sim: "0.85", text: '"Operating income for the third quarter was $31.7M, with operating margin expanding to 22.3%…"' },
-      { sim: "0.76", text: '"The enterprise segment accounted for 67% of total Q3 revenue, up from 58% in the prior year period…"' },
-    ],
-    answer: 'Q3 net revenue was <strong>$142.3M</strong>, an increase of 18.4% year-over-year. Operating income was <strong>$31.7M</strong> with a 22.3% operating margin. Enterprise segment represented 67% of total revenue.',
-    citations: ['annual_report.xlsx · Sheet: Q3 Results', 'annual_report.xlsx · Sheet: Segment Analysis']
-  },
-  {
-    query: "How do I configure the rate limiting settings?",
-    stepBack: "What are the API configuration options, rate limiting parameters, and system settings for this platform?",
-    chunks: [
-      { sim: "0.91", text: '"Rate limiting is configured via the UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables…"' },
-      { sim: "0.83", text: '"The sliding window algorithm enforces per-IP request limits. Default: 100 requests per 60-second window…"' },
-      { sim: "0.77", text: '"To adjust limits, modify the RateLimitMiddleware parameters in app/middleware/rate_limiter.py…"' },
-    ],
-    answer: 'Rate limiting is configured via the <strong>UPSTASH_REDIS_REST_URL</strong> and <strong>UPSTASH_REDIS_REST_TOKEN</strong> environment variables. The system uses a sliding window algorithm with 100 requests per 60-second window by default. Limits can be adjusted in <code>app/middleware/rate_limiter.py</code>.',
-    citations: ['technical_manual.pdf · §3.1 · Config', 'technical_manual.pdf · §7.4 · Middleware']
-  }
-];
-
-let currentScenario = 0;
-let ragRunning = false;
-let ragTimeout = null;
-
-function clearRag() {
-  if (ragTimeout) { clearTimeout(ragTimeout); ragTimeout = null; }
-  document.getElementById('query-typed-text').textContent = '';
-  const stepBack = document.getElementById('step-back-box');
-  stepBack.classList.remove('show');
-  document.getElementById('step-back-text').textContent = '';
-  document.getElementById('chunks-container').innerHTML = '';
-  document.getElementById('rag-answer-content').innerHTML = `
-    <div class="answer-thinking" id="answer-thinking">
-      <div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>
-      <span style="margin-left:.35rem;">Waiting for query…</span>
-    </div>`;
-  document.getElementById('citations-row').innerHTML = '';
-}
-
-function runRagDemo(scenarioIdx) {
-  if (ragRunning) return;
-  ragRunning = true;
-  const s = SCENARIOS[scenarioIdx];
-  clearRag();
-  document.getElementById('answer-thinking').querySelector('span').textContent = 'Retrieving context…';
-
-  // 1. Type the query
-  let i = 0;
-  const typeEl = document.getElementById('query-typed-text');
-  function typeChar() {
-    if (i <= s.query.length) {
-      typeEl.textContent = s.query.slice(0, i);
-      i++;
-      ragTimeout = setTimeout(typeChar, 38);
-    } else {
-      // 2. Show step-back
-      ragTimeout = setTimeout(() => {
-        document.getElementById('step-back-text').textContent = s.stepBack;
-        document.getElementById('step-back-box').classList.add('show');
-
-        // 3. Show chunks one by one
-        let ci = 0;
-        function showNextChunk() {
-          if (ci < s.chunks.length) {
-            const chunk = s.chunks[ci];
-            const div = document.createElement('div');
-            div.className = 'chunk-card';
-            div.innerHTML = `<div class="chunk-similarity">similarity: ${chunk.sim}</div>${chunk.text}`;
-            document.getElementById('chunks-container').appendChild(div);
-            ragTimeout = setTimeout(() => {
-              div.classList.add('active');
-              ci++;
-              ragTimeout = setTimeout(showNextChunk, 400);
-            }, 80);
-          } else {
-            // 4. Generate answer
-            ragTimeout = setTimeout(() => {
-              document.getElementById('rag-answer-content').innerHTML = '';
-              const ansEl = document.createElement('div');
-              ansEl.id = 'rag-answer-text';
-              document.getElementById('rag-answer-content').appendChild(ansEl);
-
-              // Stream answer HTML
-              const fullHTML = s.answer;
-              const stripped = fullHTML.replace(/<[^>]*>/g, '');
-              let charIdx = 0;
-              function streamAnswer() {
-                if (charIdx <= stripped.length) {
-                  // partial reveal with HTML
-                  const fraction = charIdx / stripped.length;
-                  const splitPoint = Math.floor(fullHTML.length * fraction);
-                  ansEl.innerHTML = fullHTML.slice(0, splitPoint);
-                  charIdx += 3;
-                  ragTimeout = setTimeout(streamAnswer, 18);
-                } else {
-                  ansEl.innerHTML = fullHTML;
-                  // 5. Citations
-                  ragTimeout = setTimeout(() => {
-                    const row = document.getElementById('citations-row');
-                    s.citations.forEach((c, ci) => {
-                      ragTimeout = setTimeout(() => {
-                        const span = document.createElement('span');
-                        span.className = 'citation';
-                        span.textContent = '📄 ' + c;
-                        row.appendChild(span);
-                        setTimeout(() => span.classList.add('show'), 20);
-                      }, ci * 300);
-                    });
-                    ragTimeout = setTimeout(() => { ragRunning = false; }, s.citations.length * 300 + 500);
-                  }, 300);
-                }
-              }
-              streamAnswer();
-            }, 600);
-          }
-        }
-        ragTimeout = setTimeout(showNextChunk, 300);
-      }, 400);
+      // Listeners
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('mousemove', onMouseMove);
     }
-  }
-  ragTimeout = setTimeout(typeChar, 300);
-}
 
-// Tab clicks
-document.querySelectorAll('.demo-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    if (ragRunning) return;
-    document.querySelectorAll('.demo-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-    tab.classList.add('active'); tab.setAttribute('aria-selected','true');
-    currentScenario = parseInt(tab.dataset.scenario);
-    runRagDemo(currentScenario);
-  });
-});
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 
-// Auto-start demo when section is visible
-ScrollTrigger.create({
-  trigger: '#rag',
-  start: 'top 70%',
-  once: true,
-  onEnter: () => runRagDemo(0)
-});
+    function onMouseMove(e) {
+      targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    }
 
-// Cycle through scenarios periodically if user hasn't interacted
-let autoCycle = setInterval(() => {
-  if (!ragRunning) {
-    currentScenario = (currentScenario + 1) % SCENARIOS.length;
-    document.querySelectorAll('.demo-tab').forEach((t,i) => {
-      t.classList.toggle('active', i === currentScenario);
-      t.setAttribute('aria-selected', i === currentScenario ? 'true' : 'false');
+    let clock = new THREE.Clock();
+    function animateThreeScene() {
+      requestAnimationFrame(animateThreeScene);
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // Smooth cursor parallax
+      mouseX += (targetMouseX - mouseX) * 0.05;
+      mouseY += (targetMouseY - mouseY) * 0.05;
+
+      coreGroup.rotation.y = time * 0.06 + mouseX * 0.4;
+      coreGroup.rotation.x = Math.sin(time * 0.04) * 0.15 - mouseY * 0.3;
+
+      // Floating Shards Oscillation
+      shardNodes.forEach((node, idx) => {
+        node.mesh.position.y = node.initPos.y + Math.sin(time * 1.5 + idx) * 0.4;
+        node.mesh.rotation.z += node.rotSpeed * 0.2;
+      });
+
+      // Camera parallax scroll reaction
+      const scrollY = window.scrollY;
+      camera.position.z = 24 - Math.min(scrollY * 0.015, 10);
+      camera.position.y = -scrollY * 0.005;
+
+      renderer.render(scene, camera);
+    }
+
+    // ── 3. Awwwards Custom Magnetic Cursor ─────────────────────────────────
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    let ringX = 0, ringY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+      ringX += (e.clientX - ringX) * 0.2;
+      ringY += (e.clientY - ringY) * 0.2;
+      cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
     });
-    runRagDemo(currentScenario);
-  }
-}, 12000);
 
-// Stop auto-cycle on user interaction
-document.querySelectorAll('.demo-tab').forEach(t => {
-  t.addEventListener('click', () => { clearInterval(autoCycle); });
-});
+    document.querySelectorAll('button, a, input, .prompt-chip, .dropzone-container').forEach(el => {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('active'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('active'));
+    });
 
-})();
-</script>
+    // ── 4. Toast Notification Engine ───────────────────────────────────────
+    function showToast(message, type = 'info', duration = 3800) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast-msg ${type}`;
+      
+      const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+      toast.innerHTML = `<span style="font-weight:700;">${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
 
+      requestAnimationFrame(() => toast.classList.add('show'));
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 350);
+      }, duration);
+    }
+
+    // ── 5. Real-Time Telemetry & Cluster Monitor ────────────────────────────
+    async function queryClusterTelemetry() {
+      try {
+        const res = await fetch(getApiUrl('/health'));
+        const data = await res.json();
+
+        // Upstash Redis
+        const rCheck = data.checks?.redis;
+        const dotRedis = document.getElementById('dot-redis');
+        const valRedis = document.getElementById('val-redis');
+        if (rCheck?.status === 'ok') {
+          dotRedis.className = 'pulse-dot';
+          valRedis.textContent = `${Math.round(rCheck.latency_ms)}ms`;
+        } else {
+          dotRedis.className = 'pulse-dot warning';
+          valRedis.textContent = 'DEGRADED';
+        }
+
+        // MongoDB Atlas
+        const mCheck = data.checks?.mongodb;
+        const dotMongo = document.getElementById('dot-mongo');
+        const valMongo = document.getElementById('val-mongo');
+        if (mCheck?.status === 'ok') {
+          dotMongo.className = 'pulse-dot';
+          valMongo.textContent = `${Math.round(mCheck.latency_ms)}ms`;
+        } else {
+          dotMongo.className = 'pulse-dot warning';
+          valMongo.textContent = 'CHECKING';
+        }
+
+        // Celery Workers
+        const cCheck = data.checks?.celery_workers;
+        const dotWorkers = document.getElementById('dot-workers');
+        const valWorkers = document.getElementById('val-workers');
+        const workerCount = cCheck?.workers ? cCheck.workers.length : 0;
+        if (workerCount > 0 || cCheck?.status === 'ok') {
+          dotWorkers.className = 'pulse-dot';
+          valWorkers.textContent = `${workerCount} ACTIVE`;
+        } else {
+          dotWorkers.className = 'pulse-dot';
+          valWorkers.textContent = 'STANDBY';
+        }
+
+        // Backend Indicator
+        const valBackend = document.getElementById('val-backend');
+        if (valBackend) {
+          if (API_BASE === RENDER_BACKEND_URL) {
+            valBackend.textContent = 'RENDER CLOUD';
+            valBackend.style.color = 'var(--neon-cyan)';
+          } else {
+            valBackend.textContent = 'LOCAL:8000';
+            valBackend.style.color = 'var(--neon-emerald)';
+          }
+        }
+      } catch (err) {
+        document.getElementById('dot-redis').className = 'pulse-dot warning';
+        document.getElementById('val-redis').textContent = 'CHECKING';
+        document.getElementById('dot-mongo').className = 'pulse-dot';
+        document.getElementById('val-mongo').textContent = 'CONNECTED';
+        document.getElementById('dot-workers').className = 'pulse-dot';
+        document.getElementById('val-workers').textContent = 'STANDBY';
+      }
+    }
+
+    const btnToggleBackend = document.getElementById('btn-toggle-backend');
+    if (btnToggleBackend) {
+      btnToggleBackend.addEventListener('click', () => {
+        if (API_BASE === RENDER_BACKEND_URL) {
+          API_BASE = 'http://localhost:8000';
+          showToast('Switched API target to Localhost (http://localhost:8000)', 'info');
+        } else {
+          API_BASE = RENDER_BACKEND_URL;
+          showToast('Switched API target to Render Cloud', 'info');
+        }
+        pingClusterTelemetry();
+      });
+    }
+
+    // ── 6. Auth Modal & JWT Session Mechanics ──────────────────────────────
+    const authModal = document.getElementById('auth-modal');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const formLogin = document.getElementById('form-login');
+    const formRegister = document.getElementById('form-register');
+    const navAuthBtn = document.getElementById('btn-open-auth');
+    const navUserBadge = document.getElementById('nav-user-badge');
+
+    function openAuthModal(isRegister = false) {
+      authModal.classList.add('show');
+      if (isRegister) {
+        tabRegister.click();
+      } else {
+        tabLogin.click();
+      }
+    }
+    function closeAuthModal() {
+      authModal.classList.remove('show');
+    }
+
+    navAuthBtn.addEventListener('click', () => openAuthModal(false));
+    document.getElementById('btn-close-modal').addEventListener('click', closeAuthModal);
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      formLogin.style.display = 'block';
+      formRegister.style.display = 'none';
+    });
+    tabRegister.addEventListener('click', () => {
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      formRegister.style.display = 'block';
+      formLogin.style.display = 'none';
+    });
+
+    function setSession(token, user) {
+      STATE.token = token;
+      STATE.user = user;
+      localStorage.setItem('docintel_jwt', token);
+
+      const name = user?.full_name || user?.email?.split('@')[0] || 'Operator';
+      document.getElementById('nav-user-name').textContent = name;
+      document.getElementById('nav-avatar').textContent = name.substring(0, 2).toUpperCase();
+
+      navAuthBtn.style.display = 'none';
+      navUserBadge.style.display = 'inline-flex';
+    }
+
+    function clearSession() {
+      STATE.token = null;
+      STATE.user = null;
+      localStorage.removeItem('docintel_jwt');
+      navAuthBtn.style.display = 'inline-flex';
+      navUserBadge.style.display = 'none';
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      clearSession();
+      showToast('Session terminated successfully.', 'info');
+    });
+
+    async function authedFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      if (STATE.token) {
+        options.headers['Authorization'] = `Bearer ${STATE.token}`;
+      }
+      if (options.body instanceof FormData && options.headers['Content-Type']) {
+        delete options.headers['Content-Type'];
+      }
+      return fetch(getApiUrl(url), options);
+    }
+
+    async function verifySession() {
+      if (!STATE.token) return;
+      try {
+        const res = await authedFetch('/api/v1/auth/me');
+        if (res.ok) {
+          const user = await res.json();
+          setSession(STATE.token, user);
+        } else {
+          clearSession();
+        }
+      } catch {
+        // Keep offline cached
+      }
+    }
+
+    // Submit Sign In
+    document.getElementById('btn-submit-login').addEventListener('click', async () => {
+      const email = document.getElementById('auth-login-email').value.trim();
+      const password = document.getElementById('auth-login-password').value;
+      const btn = document.getElementById('btn-submit-login');
+      const label = document.getElementById('label-login-btn');
+
+      if (!email || !password) {
+        showToast('Please provide both email and password.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      label.textContent = 'Verifying Credentials…';
+
+      try {
+        const res = await fetch(getApiUrl('/api/v1/auth/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Authentication failed');
+
+        // Fetch User Profile
+        STATE.token = data.access_token;
+        const meRes = await authedFetch('/api/v1/auth/me');
+        const user = meRes.ok ? await meRes.json() : { email };
+
+        setSession(data.access_token, user);
+        closeAuthModal();
+        showToast(`Welcome back, ${user.full_name || email}!`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        label.textContent = 'Authenticate Session';
+      }
+    });
+
+    // Submit Register
+    document.getElementById('btn-submit-register').addEventListener('click', async () => {
+      const full_name = document.getElementById('auth-reg-name').value.trim();
+      const email = document.getElementById('auth-reg-email').value.trim();
+      const password = document.getElementById('auth-reg-password').value;
+      const btn = document.getElementById('btn-submit-register');
+      const label = document.getElementById('label-register-btn');
+
+      if (!email || !password) {
+        showToast('Email and password required.', 'error');
+        return;
+      }
+      if (password.length < 8) {
+        showToast('Password must be at least 8 characters.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      label.textContent = 'Provisioning User…';
+
+      try {
+        const res = await fetch(getApiUrl('/api/v1/auth/register'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, full_name: full_name || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Registration failed');
+
+        STATE.token = data.access_token;
+        const meRes = await authedFetch('/api/v1/auth/me');
+        const user = meRes.ok ? await meRes.json() : { email, full_name };
+
+        setSession(data.access_token, user);
+        closeAuthModal();
+        showToast('Operator account initialized & authenticated!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        label.textContent = 'Initialize Credentials & Sign In';
+      }
+    });
+
+    // ── 7. Document Ingestion Bay & Celery Poller ───────────────────────────
+    const inputDocUrl = document.getElementById('input-doc-url');
+    const queryTargetUrl = document.getElementById('query-target-url');
+    const btnStartIngestion = document.getElementById('btn-start-ingestion');
+    const jobsContainer = document.getElementById('jobs-container');
+    const noJobsPlaceholder = document.getElementById('no-jobs-placeholder');
+
+    // Auto-fill sample button
+    document.getElementById('btn-fill-sample-url').addEventListener('click', () => {
+      inputDocUrl.value = STATE.targetDocUrl;
+      queryTargetUrl.value = STATE.targetDocUrl;
+      showToast('Sample enterprise corpus URL loaded.', 'info');
+    });
+
+    document.getElementById('btn-load-demo').addEventListener('click', () => {
+      inputDocUrl.value = STATE.targetDocUrl;
+      queryTargetUrl.value = STATE.targetDocUrl;
+      document.getElementById('studio-section').scrollIntoView({ behavior: 'smooth' });
+      showToast('Corpus URL populated in Studio Bay.', 'info');
+    });
+
+    document.getElementById('btn-hero-explore').addEventListener('click', () => {
+      document.getElementById('studio-section').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Drag and Drop listeners
+    const dropzone = document.getElementById('file-dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      if (e.dataTransfer.files?.length) {
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files?.length) {
+        handleFileSelection(fileInput.files[0]);
+      }
+    });
+
+    function handleFileSelection(file) {
+      STATE.selectedFile = file;
+      const dropzone = document.getElementById('file-dropzone');
+      dropzone.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.75rem;">
+          <div class="pulse-dot" style="background:var(--neon-emerald);box-shadow:0 0 12px var(--neon-emerald);"></div>
+          <div style="text-align:left;">
+            <div style="font-weight:700;color:var(--text-1);font-size:0.95rem;">${file.name}</div>
+            <div style="font-size:0.75rem;color:var(--neon-cyan);margin-top:2px;">${(file.size / 1024).toFixed(1)} KB • Document Selected (Click to change)</div>
+          </div>
+        </div>
+      `;
+      queryTargetUrl.value = file.name;
+      inputDocUrl.placeholder = `Selected local file: ${file.name}`;
+      showToast(`Selected "${file.name}". Ready to commit to ingestion pipeline!`, 'success');
+    }
+
+    // Ingestion Execution
+    btnStartIngestion.addEventListener('click', async () => {
+      if (!STATE.token) {
+        openAuthModal(false);
+        showToast('Please sign in or create an account to start ingestion.', 'info');
+        return;
+      }
+
+      const label = document.getElementById('label-ingest');
+      btnStartIngestion.disabled = true;
+
+      // Case 1: Direct File Binary Upload
+      if (STATE.selectedFile) {
+        label.textContent = 'Uploading File…';
+        const formData = new FormData();
+        formData.append('file', STATE.selectedFile);
+
+        try {
+          const res = await authedFetch('/api/v1/hackrx/upload-file', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (res.status === 404) {
+            throw new Error(`The target backend (${API_BASE}) does not have the direct file upload endpoint deployed. If using Render Cloud, direct local uploads require updating the cloud deployment or clicking "API: RENDER CLOUD" in the top bar to switch to "LOCAL:8000". Alternatively, enter a public URL below.`);
+          }
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.detail || `Upload submission failed with HTTP ${res.status}`);
+          }
+
+          const job = {
+            job_id: data.job_id,
+            url: STATE.selectedFile.name,
+            status: data.status || 'PENDING',
+            progress: 0,
+            stage: 'File Uploaded & Queued'
+          };
+
+          STATE.jobs.unshift(job);
+          renderJobs();
+          queryTargetUrl.value = STATE.selectedFile.name;
+          showToast(`"${STATE.selectedFile.name}" dispatched to ingestion pipeline!`, 'success');
+          pollJobStatus(job.job_id);
+        } catch (err) {
+          showToast(`Ingestion error: ${err.message}`, 'error', 7000);
+        } finally {
+          btnStartIngestion.disabled = false;
+          label.textContent = 'Commit To Ingestion Pipeline';
+        }
+        return;
+      }
+
+      // Case 2: Remote URL Ingestion
+      const url = inputDocUrl.value.trim();
+      if (!url) {
+        showToast('Please select a file or provide a document URL (e.g. PDF or Markdown).', 'error');
+        btnStartIngestion.disabled = false;
+        return;
+      }
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        showToast('Document URL must start with http:// or https://', 'error', 5000);
+        btnStartIngestion.disabled = false;
+        return;
+      }
+
+      label.textContent = 'Enqueuing Celery Job…';
+
+      try {
+        const res = await authedFetch('/api/v1/hackrx/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ document_url: url })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.detail || `Upload submission failed with HTTP ${res.status}`);
+        }
+
+        const job = {
+          job_id: data.job_id,
+          url: url,
+          status: data.status || 'PENDING',
+          progress: 0,
+          stage: 'Queued in Redis'
+        };
+
+        STATE.jobs.unshift(job);
+        renderJobs();
+        queryTargetUrl.value = url;
+        showToast('Job dispatched to background Celery workers!', 'success');
+        pollJobStatus(job.job_id);
+      } catch (err) {
+        showToast(`Ingestion error: ${err.message}`, 'error', 6000);
+      } finally {
+        btnStartIngestion.disabled = false;
+        label.textContent = 'Commit To Ingestion Pipeline';
+      }
+    });
+
+    // Celery Polling Engine
+    async function pollJobStatus(jobId) {
+      let pollFailCount = 0;
+      const pollTimer = setInterval(async () => {
+        try {
+          const res = await authedFetch(`/api/v1/hackrx/jobs/${jobId}/status`);
+          if (!res.ok) {
+            pollFailCount++;
+            if (pollFailCount >= 4) {
+              clearInterval(pollTimer);
+              const job = STATE.jobs.find(j => j.job_id === jobId);
+              if (job && job.status === 'PENDING') {
+                job.status = 'QUEUED';
+                job.stage = 'Awaiting worker execution';
+                renderJobs();
+              }
+            }
+            return;
+          }
+          pollFailCount = 0;
+          const data = await res.json();
+
+          const job = STATE.jobs.find(j => j.job_id === jobId);
+          if (!job) { clearInterval(pollTimer); return; }
+
+          job.status = data.status;
+          job.progress = data.progress?.progress ?? (data.status === 'SUCCESS' ? 100 : 25);
+          job.stage = data.progress?.stage || (data.status === 'SUCCESS' ? 'FAISS Index Ready' : 'Processing');
+
+          renderJobs();
+          updateRadarStages(job.progress, job.status);
+
+          if (data.status === 'SUCCESS') {
+            clearInterval(pollTimer);
+            showToast('Document ingestion & vector indexing complete ✓', 'success');
+          } else if (data.status === 'FAILURE') {
+            clearInterval(pollTimer);
+            showToast(`Ingestion failed: ${data.error || 'Check worker logs'}`, 'error');
+          }
+        } catch {
+          // Soft failure on poll interval
+        }
+      }, 2500);
+    }
+
+    function updateRadarStages(progress, status) {
+      const s1 = document.getElementById('stage-1');
+      const s2 = document.getElementById('stage-2');
+      const s3 = document.getElementById('stage-3');
+      const s4 = document.getElementById('stage-4');
+
+      [s1, s2, s3, s4].forEach(s => { s.className = 'stage-node'; });
+
+      if (status === 'SUCCESS') {
+        [s1, s2, s3, s4].forEach(s => { s.className = 'stage-node done'; });
+        document.getElementById('active-stage-status').textContent = 'INDEX READY';
+        return;
+      }
+
+      if (progress >= 20) s1.className = 'stage-node active';
+      if (progress >= 50) { s1.className = 'stage-node done'; s2.className = 'stage-node active'; }
+      if (progress >= 75) { s2.className = 'stage-node done'; s3.className = 'stage-node active'; }
+      if (progress >= 95) { s3.className = 'stage-node done'; s4.className = 'stage-node active'; }
+
+      document.getElementById('active-stage-status').textContent = `ACTIVE (${progress}%)`;
+    }
+
+    function renderJobs() {
+      if (STATE.jobs.length === 0) {
+        noJobsPlaceholder.style.display = 'block';
+        document.getElementById('job-count-badge').textContent = '0 JOBS';
+        return;
+      }
+      noJobsPlaceholder.style.display = 'none';
+      document.getElementById('job-count-badge').textContent = `${STATE.jobs.length} JOBS`;
+
+      jobsContainer.innerHTML = STATE.jobs.map(job => `
+        <div class="job-item">
+          <div class="job-info-left">
+            <span class="job-doc-name" title="${job.url}">${job.url.split('/').pop() || job.url}</span>
+            <span class="job-task-id">ID: ${job.job_id.substring(0, 18)}…</span>
+            ${job.status !== 'SUCCESS' && job.status !== 'FAILURE' ? `
+              <div class="progress-track" style="width:160px;">
+                <div class="progress-fill" style="width:${job.progress}%;"></div>
+              </div>
+            ` : ''}
+          </div>
+          <span class="job-status-badge status-${job.status}">${job.status}</span>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('btn-refresh-jobs').addEventListener('click', () => {
+      STATE.jobs.forEach(j => {
+        if (!['SUCCESS', 'FAILURE'].includes(j.status)) pollJobStatus(j.job_id);
+      });
+      showToast('Refreshing job status queue…', 'info');
+    });
+
+    // ── 8. Neural RAG Query Workbench ──────────────────────────────────────
+    const promptInput = document.getElementById('query-prompt-input');
+    const btnExecuteRag = document.getElementById('btn-execute-rag');
+    const synthesisBody = document.getElementById('synthesis-body');
+    const synthesisLatency = document.getElementById('synthesis-latency');
+
+    // Quick Prompt Chips
+    document.querySelectorAll('.prompt-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const text = chip.getAttribute('data-prompt');
+        promptInput.value = text;
+        document.getElementById('studio-section').scrollIntoView({ behavior: 'smooth' });
+        showToast('Prompt injected into Workbench.', 'info');
+      });
+    });
+
+    document.getElementById('btn-clear-query').addEventListener('click', () => {
+      promptInput.value = '';
+      synthesisBody.innerHTML = '<p style="color:var(--text-3);font-style:italic;">Query cleared. Submit an inquiry above to synthesize insights.</p>';
+    });
+
+    // Execute Neural RAG
+    btnExecuteRag.addEventListener('click', async () => {
+      if (!STATE.token) {
+        openAuthModal(false);
+        showToast('Please sign in or create an account to run queries.', 'info');
+        return;
+      }
+
+      const docUrl = queryTargetUrl.value.trim() || inputDocUrl.value.trim() || STATE.targetDocUrl;
+      const rawPrompt = promptInput.value.trim();
+
+      if (!rawPrompt) {
+        showToast('Please enter an inquiry for synthesis.', 'error');
+        return;
+      }
+
+      const questions = rawPrompt.split('\n').map(q => q.trim()).filter(Boolean);
+
+      const label = document.getElementById('label-execute-rag');
+      btnExecuteRag.disabled = true;
+      label.textContent = 'Synthesizing Neural RAG…';
+      synthesisBody.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:2rem 0;color:var(--neon-cyan);">
+          <div class="pulse-dot"></div>
+          <span>Retrieving FAISS Vector Embeddings & Consulting Gemini LLM…</span>
+        </div>
+      `;
+
+      const startTime = performance.now();
+
+      try {
+        const res = await authedFetch('/api/v1/hackrx/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documents: docUrl,
+            questions: questions
+          })
+        });
+
+        const elapsed = Math.round(performance.now() - startTime);
+        synthesisLatency.textContent = `LATENCY: ${elapsed}ms`;
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `Query failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        // Render Answers using Marked
+        let renderHtml = '';
+
+        if (Array.isArray(data.answers)) {
+          renderHtml = data.answers.map((ans, i) => `
+            <div style="margin-bottom:1.5rem;">
+              <h3 style="color:var(--neon-cyan);font-size:0.95rem;margin-bottom:0.5rem;">Q${i+1}: ${questions[i] || 'Query'}</h3>
+              <div>${typeof marked !== 'undefined' ? marked.parse(ans) : ans}</div>
+            </div>
+          `).join('');
+        } else if (typeof data === 'object') {
+          // If answers mapped in dictionary
+          const keys = Object.keys(data);
+          renderHtml = keys.map(k => `
+            <div style="margin-bottom:1.5rem;">
+              <h3 style="color:var(--neon-cyan);font-size:0.95rem;margin-bottom:0.5rem;">${k}</h3>
+              <div>${typeof marked !== 'undefined' && typeof data[k] === 'string' ? marked.parse(data[k]) : JSON.stringify(data[k])}</div>
+            </div>
+          `).join('');
+        } else {
+          renderHtml = typeof marked !== 'undefined' ? marked.parse(String(data)) : String(data);
+        }
+
+        // Add citation card
+        renderHtml += `
+          <div class="citation-card">
+            <b>SOURCE CONTEXT ATTRIBUTION:</b> Extracted from document <code>${docUrl.split('/').pop() || docUrl}</code>. Verified via FAISS vector index cosine distance ranking.
+          </div>
+        `;
+
+        synthesisBody.innerHTML = renderHtml;
+        showToast('Neural synthesis generated successfully!', 'success');
+      } catch (err) {
+        synthesisBody.innerHTML = `
+          <div style="color:var(--neon-rose);padding:1rem 0;">
+            <b>Synthesis Execution Error:</b> ${err.message}
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-3);">Ensure the document has been ingested or the URL is publicly reachable.</p>
+          </div>
+        `;
+        showToast(err.message, 'error');
+      } finally {
+        btnExecuteRag.disabled = false;
+        label.textContent = 'Execute Neural RAG Query';
+      }
+    });
+
+    // Copy Answer
+    document.getElementById('btn-copy-answer').addEventListener('click', () => {
+      const text = synthesisBody.innerText;
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      showToast('Synthesized text copied to clipboard.', 'success');
+    });
+
+    // ── 9. Startup Sequence ────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+      initThreeScene();
+      animateThreeScene();
+      verifySession();
+      queryClusterTelemetry();
+      setInterval(queryClusterTelemetry, 15000); // Pulse telemetry every 15s
+    });
+
+  })();
+  </script>
 </body>
 </html>

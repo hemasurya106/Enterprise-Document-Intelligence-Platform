@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -27,6 +27,10 @@ app = FastAPI(
     version="1.0.0",
     description="RAG pipeline with async ingestion via Celery + Redis + MongoDB Auth",
 )
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
 
 # ── Static files (login UI) ───────────────────────────────────────────────────
 # Serves static/index.html at GET /
