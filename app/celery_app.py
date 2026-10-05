@@ -20,6 +20,7 @@ CELERY_LOG_LEVEL = os.getenv('CELERY_LOG_LEVEL', 'info')
 _DEFAULT_POOL = 'solo' if sys.platform == 'win32' else 'prefork'
 CELERY_POOL = os.getenv('CELERY_POOL', _DEFAULT_POOL)
 app = Celery('rag_pipeline', broker=REDIS_URL, backend=REDIS_URL, include=['app.tasks'])
+app.set_default()
 app.conf.update(
     # Connection resiliency
     broker_connection_retry_on_startup=True,

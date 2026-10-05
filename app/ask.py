@@ -229,7 +229,7 @@ async def upload_document_file(
 
         logger.info(
             "Local file uploaded & queued for ingestion",
-            extra={"job_id": task.id, "filename": filename, "user_id": user.id},
+            extra={"job_id": task.id, "file_name": filename, "user_id": user.id},
         )
         return DocumentUploadResponse(
             job_id=task.id, status="pending", document_url=filename
@@ -239,7 +239,7 @@ async def upload_document_file(
     except Exception as e:
         logger.error(
             "Error uploading document file",
-            extra={"filename": file.filename, "user_id": user.id, "error": str(e)},
+            extra={"file_name": file.filename, "user_id": user.id, "error": str(e)},
             exc_info=True,
         )
         raise HTTPException(

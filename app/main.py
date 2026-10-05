@@ -39,7 +39,11 @@ if os.path.isdir(_static_dir):
     app.mount("/static", StaticFiles(directory=_static_dir, html=True), name="static")
 
 # ── Middleware (last-registered = outermost) ──────────────────────────────────
-# Execution order on a request: Logging → RateLimit → CORS → route handler
+# Execution order on a request: CORS → Logging → RateLimit → route handler
+# Having CORS outermost guarantees Access-Control-Allow-Origin is attached even
+# if downstream middleware or endpoints raise errors (e.g. 429, 500).
+app.add_middleware(StructuredLoggingMiddleware)
+app.add_middleware(RateLimitMiddleware, upstash_url=UPSTASH_URL, upstash_token=UPSTASH_TOKEN)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],          # tighten to your domain in production
@@ -47,8 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware, upstash_url=UPSTASH_URL, upstash_token=UPSTASH_TOKEN)
-app.add_middleware(StructuredLoggingMiddleware)
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router)     # POST /api/v1/auth/*  (public — no auth)

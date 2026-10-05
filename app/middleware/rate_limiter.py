@@ -136,6 +136,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return self._redis
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Preflight CORS requests should never be rate limited
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Health endpoint has its own entry in ROUTE_LIMITS; let it through
         # even if Redis is down (degrade gracefully).
         try:
