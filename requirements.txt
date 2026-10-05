@@ -41,9 +41,8 @@ flower>=2.0.1
 
 # --- Auth (self-managed) ---
 PyJWT>=2.9.0              # JWT encode + decode (HS256, self-signed)
-bcrypt==3.2.2             # Pinned because passlib 1.7.4 crashes with bcrypt >= 4.0.0
+bcrypt==3.2.2             # Pinned: passlib 1.7.4 crashes with bcrypt >= 4.0.0
 passlib[bcrypt]>=1.7.4    # Password hashing
-bcrypt>=4.0.0
 pymongo>=4.7.0            # MongoDB driver
 
 # --- production hardening (no new packages needed) ---
