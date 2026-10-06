@@ -224,6 +224,12 @@ async def upload_document_file(
         with open(file_path, "wb") as f:
             f.write(contents)
 
+        from app.utils.document_parser import DocumentParser
+        doc_hash = DocumentParser().get_file_hash(file_path)
+        from app.tasks import KNOWN_DOCS_PATH
+        with open(os.path.join(KNOWN_DOCS_PATH, filename + ".hash"), "w") as f:
+            f.write(doc_hash)
+
         task = process_document.delay(file_path, filename)
         await _set_job_owner(task.id, user.id)
 

@@ -37,13 +37,22 @@ def process_question(args):
 
 def run_pipeline(document_url: str, questions: list[str]) -> dict:
     parser = DocumentParser()
-    try:
-        file_path = parser.download_file(document_url)
-    except Exception as dl_err:
-        err_msg = f'Error downloading document: {dl_err}'
-        print(err_msg)
-        return {'answers': [err_msg for _ in questions]}
-    doc_hash = parser.get_file_hash(file_path)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    
+    doc_hash = None
+    hash_file = os.path.join(project_root, 'known_documents', f"{document_url}.hash")
+    if os.path.exists(hash_file):
+        with open(hash_file, "r") as f:
+            doc_hash = f.read().strip()
+            
+    if not doc_hash:
+        try:
+            file_path = parser.download_file(document_url)
+            doc_hash = parser.get_file_hash(file_path)
+        except Exception as dl_err:
+            err_msg = f'Error downloading document: {dl_err}'
+            print(err_msg)
+            return {'answers': [err_msg for _ in questions]}
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     known_doc_path = os.path.join(project_root, 'known_documents', doc_hash)
     embeddings = None
