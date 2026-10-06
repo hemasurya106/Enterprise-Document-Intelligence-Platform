@@ -154,7 +154,7 @@ def answer_questions(self, doc_hash: str, questions: list, hardcoded_answers: di
                         all_relevant_chunks.add(chunk)
                     context = '\n\n---\n\n'.join(list(all_relevant_chunks))
                     if context:
-                        answer = generate_response_with_context(step_back_query, context)
+                        answer = generate_response_with_context(question, context)
                         answer = summarize_text(answer, question)
                         answer = answer.lstrip('```').rstrip('```')
                         final_answers[question] = answer

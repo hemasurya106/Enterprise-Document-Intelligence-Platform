@@ -29,7 +29,7 @@ def process_question(args):
     context = '\n\n---\n\n'.join(list(all_relevant_chunks))
     if not context:
         return 'Could not find relevant information in the document to answer the question.'
-    answer = generate_response_with_context(step_back_query, context)
+    answer = generate_response_with_context(question, context)
     answer = summarize_text(answer, question)
     answer = answer.lstrip('```')
     answer = answer.rstrip('```')

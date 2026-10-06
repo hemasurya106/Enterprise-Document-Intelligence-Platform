@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import logging
 
 from PIL import Image
@@ -49,22 +50,54 @@ def extract_text_with_gemini_vision(image_bytes: bytes, tesseract_text: str = ""
             + hint_block
         )
 
-        model    = genai.GenerativeModel(GEMINI_VISION_MODEL)
-        response = gemini_breaker.call(model.generate_content, [prompt, img])
+        # 1. Primary: Try OpenAI gpt-4o-mini vision if OPENAI_API_KEY is available
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            try:
+                import base64
+                from openai import OpenAI
+                client = OpenAI(api_key=openai_key)
+                b64_img = base64.b64encode(image_bytes).decode("utf-8")
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"},
+                                },
+                            ],
+                        }
+                    ],
+                    max_tokens=1000,
+                    temperature=0,
+                )
+                extracted = response.choices[0].message.content.strip()
+                if extracted:
+                    return extracted
+            except Exception as oai_err:
+                logger.warning("OpenAI vision OCR fallback (%s) — trying Gemini if configured", oai_err)
 
-        if response is None:
-            # Circuit breaker tripped or timeout — log already emitted by breaker
-            logger.warning(
-                "Gemini Vision unavailable (circuit breaker/timeout) — returning empty",
-                extra={"circuit_state": gemini_breaker.state},
-            )
-            return ""
+        # 2. Fallback: Gemini Vision if configured
+        if os.getenv("GEMINI_AI_API_KEY") and genai is not None:
+            configure_gemini()
+            model    = genai.GenerativeModel(GEMINI_VISION_MODEL)
+            response = gemini_breaker.call(model.generate_content, [prompt, img])
 
-        if not getattr(response, "text", None):
-            logger.warning("Gemini Vision returned empty response")
-            return ""
+            if response is None:
+                logger.warning(
+                    "Gemini Vision unavailable (circuit breaker/timeout) — returning empty",
+                    extra={"circuit_state": gemini_breaker.state},
+                )
+                return ""
 
-        return response.text.strip()
+            if getattr(response, "text", None):
+                return response.text.strip()
+
+        return ""
 
     except Exception as exc:
         logger.error(
