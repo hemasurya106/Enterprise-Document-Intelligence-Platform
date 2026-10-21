@@ -119,7 +119,8 @@ def run_pipeline(document_url: str, questions: list[str]) -> dict:
             index_data = build_faiss_index(embeddings)
         if use_rag_questions:
             print('Answering remaining questions with Step-Back RAG...')
-            with ThreadPoolExecutor(max_workers=min(8, len(use_rag_questions))) as executor:
+            max_workers = min(16, max(len(use_rag_questions), 1))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 args_list = [(q, chunks, index_data, embeddings) for q in use_rag_questions]
                 future_to_q = {executor.submit(process_question, arg): i for i, arg in enumerate(args_list)}
                 rag_results = [None] * len(use_rag_questions)
@@ -142,8 +143,13 @@ def run_pipeline(document_url: str, questions: list[str]) -> dict:
             final_answers.append(rag_answers.get(q, 'Error: No answer generated.'))
             flag = 1
     if flag == 1:
-        os.remove(file_path)
+        if 'file_path' in locals() and file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
         return {'answers': final_answers}
     else:
-        time.sleep(random.uniform(13, 16))
+        if os.getenv("ENABLE_ARTIFICIAL_DELAY", "false").lower() == "true":
+            time.sleep(random.uniform(13, 16))
         return {'answers': final_answers}

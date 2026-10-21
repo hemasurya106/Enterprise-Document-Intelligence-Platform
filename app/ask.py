@@ -80,7 +80,10 @@ async def _get_job_owner(job_id: str) -> Optional[str]:
 
 class AskRequest(BaseModel):
     documents: str
-    questions: list[str]
+    questions: Optional[list[str]] = Field(default=None, description="List of questions for parallel multi-query execution")
+    queries: Optional[list[str]] = Field(default=None, description="Alternative alias for questions list")
+    question: Optional[str] = Field(default=None, description="Single question input")
+    query: Optional[str] = Field(default=None, description="Single query input")
 
 
 class DocumentUploadRequest(BaseModel):
@@ -146,14 +149,34 @@ async def ask_policy_questions(
     user: AuthUser = Depends(get_current_user),
 ):
     """
-    Synchronous RAG pipeline. Protected — requires a valid JWT.
+    Synchronous RAG pipeline with parallel multi-threading. Protected — requires a valid JWT.
     """
+    raw_questions = req.questions or req.queries or []
+    if not raw_questions:
+        single = req.question or req.query
+        if single:
+            raw_questions = [single]
+    
+    # Flatten any newline-delimited inputs if passed as strings
+    normalized_questions: list[str] = []
+    for item in raw_questions:
+        if isinstance(item, str):
+            for line in item.splitlines():
+                stripped = line.strip()
+                if stripped:
+                    normalized_questions.append(stripped)
+
+    if not normalized_questions:
+        raise HTTPException(
+            status_code=400,
+            detail="No inquiries provided. Supply 'questions' (list[str]) or 'query' (str)."
+        )
     
     logger.info(
-        "RAG run requested",
-        extra={"user_id": user.id, "questions": len(req.questions)},
+        "RAG run requested (parallel multi-query)",
+        extra={"user_id": user.id, "questions_count": len(normalized_questions)},
     )
-    result = run_pipeline(req.documents, req.questions)
+    result = run_pipeline(req.documents, normalized_questions)
     return result
 
 
