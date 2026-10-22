@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   # Redis - Used as Celery broker and result backend
   redis:
     image: redis:7-alpine
     container_name: rag-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -58,6 +56,7 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - ./static:/app/static
       - ./known_documents:/app/known_documents
       - ./temp_files:/app/temp_files
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
