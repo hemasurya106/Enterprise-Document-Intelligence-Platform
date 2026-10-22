@@ -26,9 +26,26 @@ def process_document(self, file_path: str, document_url: str) -> dict:
     try:
         logger.info(f'[{current_task.request.id}] Starting document processing for {document_url}')
         current_task.update_state(state='PROGRESS', meta={'stage': 'parsing', 'progress': 10})
+
+        # Remap Docker/container paths to local project paths on non-container environments
+        if file_path.startswith('/app/temp_files/') and not os.path.exists(file_path):
+            local_filename = os.path.basename(file_path)
+            local_path = os.path.join(TEMP_FILES_PATH, local_filename)
+            if os.path.exists(local_path):
+                logger.info(f'Remapped Docker path to local: {local_path}')
+                file_path = local_path
+            else:
+                logger.error(f'File not found on this worker (stale Render task?): {file_path}')
+                raise FileNotFoundError(f'Stale task — file does not exist locally: {file_path}')
+
+        if not os.path.exists(file_path):
+            logger.error(f'File not found: {file_path}')
+            raise FileNotFoundError(f'File not found: {file_path}')
+
         parser = DocumentParser()
         doc_hash = parser.get_file_hash(file_path)
         logger.info(f'Document hash: {doc_hash}')
+
         known_doc_path = os.path.join(KNOWN_DOCS_PATH, doc_hash)
         if os.path.exists(known_doc_path):
             logger.info(f'Document {doc_hash} already in cache. Skipping reprocessing.')
