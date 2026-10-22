@@ -1,23 +1,52 @@
-PyMuPDF>=1.24.2
-pymupdf4llm==0.0.5
-requests==2.31.0
-faiss-cpu==1.7.4
-langchain==0.1.17
-langchain-openai==0.1.6
-langchain-text-splitters==0.0.1
-langchain-core==0.1.52
-openai>=1.24.0,<2.0.0
-python-dotenv==1.0.0
-google-generativeai==0.8.3
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.0
-python-docx==1.1.0
-openpyxl==3.1.2
-pandas==2.1.4
-pytesseract==0.3.10
-Pillow==10.1.0
-docx2txt==0.8
-xlrd==2.0.1
-python-pptx==0.6.23
+PyMuPDF>=1.26.0
+pymupdf4llm>=0.0.20
 
+requests>=2.32.0
+
+faiss-cpu>=1.11.0
+
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.3.0
+langchain-text-splitters>=0.3.0
+
+openai>=1.99.0
+
+python-dotenv>=1.1.0
+
+google-generativeai>=0.8.5
+
+fastapi>=0.116.0
+python-multipart>=0.0.9
+uvicorn[standard]>=0.35.0
+
+pydantic[email]>=2.11.0
+email-validator>=2.0.0
+
+python-docx>=1.2.0
+openpyxl>=3.1.5
+pandas>=2.3.0
+
+pytesseract>=0.3.13
+Pillow>=11.0.0
+
+docx2txt>=0.9
+xlrd>=2.0.1
+python-pptx>=1.0.2
+
+celery[redis]>=5.5.3
+redis>=6.2.0
+upstash-redis>=1.2.2
+flower>=2.0.1
+
+# --- Auth (self-managed) ---
+PyJWT>=2.9.0              # JWT encode + decode (HS256, self-signed)
+bcrypt==3.2.2             # Pinned: passlib 1.7.4 crashes with bcrypt >= 4.0.0
+passlib[bcrypt]>=1.7.4    # Password hashing
+pymongo>=4.7.0            # MongoDB driver
+
+# --- production hardening (no new packages needed) ---
+# Rate limiting  → redis (already above) — sliding-window via INCR+EXPIRE
+# Structured JSON logging → stdlib logging + json (no structlog needed)
+# Circuit breaker → stdlib threading + concurrent.futures (no tenacity needed)
+# Health check    → redis + celery[redis] + pymongo (already above)

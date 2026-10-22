@@ -1,0 +1,26 @@
+services:
+  # -------------------------------------------------------------------------
+  # All-in-One Web Service (FastAPI + Celery Worker + Beat)
+  # Compatible with Render Free Tier ($0/month)
+  # -------------------------------------------------------------------------
+  - type: web
+    name: docintel-platform
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: REDIS_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: MONGODB_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_AI_API_KEY
+        sync: false

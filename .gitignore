@@ -51,6 +51,9 @@ dmypy.json
 # --- IDE & editors ---
 .idea/
 .vscode/
+.agents/
+SKILLS/
+skills-lock.json
 *.swp
 *.swo
 *~
@@ -75,6 +78,7 @@ logs/
 # --- Temp downloads / scratch (document parser, local tests) ---
 *.tmp
 *.temp
+temp_files/
 _sanity.txt
 _vision_ocr_test_output.txt
 

@@ -1,17 +1,331 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from app.pipeline import run_pipeline  # all phases wrapped here
+import os
+import uuid
+import logging
+from typing import Optional
 
-router = APIRouter()
+from upstash_redis.asyncio import Redis as UpstashRedis
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+
+from pydantic import BaseModel, Field
+
+from app.pipeline import run_pipeline
+from app.celery_app import get_celery_app
+from app.tasks import process_document, answer_questions
+from app.utils.document_parser import DocumentParser
+from app.auth.jwt import get_current_user
+from app.auth.models import AuthUser
+
+logger     = logging.getLogger("app.ask")
+router     = APIRouter()
+celery_app = get_celery_app()
+
+# ── Redis client for job ownership ────────────────────────────────────────────
+# Reuses the same Redis instance as Celery / rate-limiter.
+_UPSTASH_URL   = os.getenv("UPSTASH_REDIS_REST_URL", "")
+_UPSTASH_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
+_JOB_TTL_S   = 86_400   # 24 h — matches Celery result_expires
+
+_redis: UpstashRedis | None = None
+
+
+def _get_redis() -> UpstashRedis:
+    global _redis
+    if _redis is None:
+        url = (os.getenv("UPSTASH_REDIS_REST_URL") or _UPSTASH_URL).strip("\"' \t\r\n")
+        token = (os.getenv("UPSTASH_REDIS_REST_TOKEN") or _UPSTASH_TOKEN).strip("\"' \t\r\n")
+        if not url or not token:
+            redis_url = (os.getenv("REDIS_URL") or "").strip("\"' \t\r\n")
+            if redis_url:
+                try:
+                    import urllib.parse
+                    parsed = urllib.parse.urlparse(redis_url)
+                    if parsed.hostname and not url:
+                        url = f"https://{parsed.hostname}"
+                    if parsed.password and not token:
+                        token = parsed.password
+                except Exception:
+                    pass
+        _redis = UpstashRedis(url=url, token=token)
+    return _redis
+
+
+async def _set_job_owner(job_id: str, user_id: str) -> None:
+    """Store owner_id alongside the Celery task so we can enforce ownership."""
+    try:
+        r = _get_redis()
+        await r.hset(f"job:{job_id}", values={"owner_id": user_id})
+        await r.expire(f"job:{job_id}", _JOB_TTL_S)
+    except Exception as exc:
+        # Non-fatal — worst case a job is orphaned and the owner check skips
+        logger.warning(
+            "Failed to set job owner in Redis",
+            extra={"job_id": job_id, "user_id": user_id, "error": str(exc)},
+        )
+
+
+async def _get_job_owner(job_id: str) -> Optional[str]:
+    """Return the owner_id for a job, or None if the key has expired / never set."""
+    try:
+        r = _get_redis()
+        return await r.hget(f"job:{job_id}", "owner_id")
+    except Exception as exc:
+        logger.warning(
+            "Failed to get job owner from Redis",
+            extra={"job_id": job_id, "error": str(exc)},
+        )
+        return None
+
+
+# ── Pydantic schemas ──────────────────────────────────────────────────────────
 
 class AskRequest(BaseModel):
     documents: str
-    questions: list[str]
+    questions: Optional[list[str]] = Field(default=None, description="List of questions for parallel multi-query execution")
+    queries: Optional[list[str]] = Field(default=None, description="Alternative alias for questions list")
+    question: Optional[str] = Field(default=None, description="Single question input")
+    query: Optional[str] = Field(default=None, description="Single query input")
+
+
+class DocumentUploadRequest(BaseModel):
+    document_url: str = Field(..., description="URL or local path to document")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"document_url": "https://example.com/policy.pdf"}
+        }
+
+
+class DocumentUploadResponse(BaseModel):
+    job_id:       str = Field(..., description="Celery task ID for tracking progress")
+    status:       str = Field(default="pending", description="Initial status")
+    document_url: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "job_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "status": "pending",
+                "document_url": "https://example.com/policy.pdf",
+            }
+        }
+
+
+class JobStatus(BaseModel):
+    job_id:   str
+    status:   str  = Field(..., description="PENDING, STARTED, SUCCESS, FAILURE, or RETRY")
+    result:   Optional[dict] = Field(default=None, description="Result payload if SUCCESS")
+    error:    Optional[str]  = Field(default=None, description="Error message if FAILURE")
+    progress: Optional[dict] = Field(default=None, description="Progress details if STARTED")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "job_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "status": "SUCCESS",
+                "result": {
+                    "status": "success",
+                    "doc_hash": "abc123...",
+                    "chunks_count": 42,
+                    "chunks_file": "/path/to/chunks.json",
+                    "index_file":  "/path/to/index.faiss",
+                    "cached": False,
+                },
+            }
+        }
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
+
 @router.get("/")
 def read_root():
-    return {"msg": "FastAPI on Render working!"}
+    """Redirect browsers to the static login page."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/index.html")
+
+
 @router.post("/api/v1/hackrx/run")
-async def ask_policy_questions(req: AskRequest):
-    result = run_pipeline(req.documents, req.questions)
+async def ask_policy_questions(
+    req: AskRequest,
+    user: AuthUser = Depends(get_current_user),
+):
+    """
+    Synchronous RAG pipeline with parallel multi-threading. Protected — requires a valid JWT.
+    """
+    raw_questions = req.questions or req.queries or []
+    if not raw_questions:
+        single = req.question or req.query
+        if single:
+            raw_questions = [single]
+    
+    # Flatten any newline-delimited inputs if passed as strings
+    normalized_questions: list[str] = []
+    for item in raw_questions:
+        if isinstance(item, str):
+            for line in item.splitlines():
+                stripped = line.strip()
+                if stripped:
+                    normalized_questions.append(stripped)
+
+    if not normalized_questions:
+        raise HTTPException(
+            status_code=400,
+            detail="No inquiries provided. Supply 'questions' (list[str]) or 'query' (str)."
+        )
+    
+    logger.info(
+        "RAG run requested (parallel multi-query)",
+        extra={"user_id": user.id, "questions_count": len(normalized_questions)},
+    )
+    result = run_pipeline(req.documents, normalized_questions)
     return result
 
+
+@router.post("/api/v1/hackrx/upload", response_model=DocumentUploadResponse)
+async def upload_document(
+    req: DocumentUploadRequest,
+    user: AuthUser = Depends(get_current_user),
+) -> DocumentUploadResponse:
+    """
+    Async document ingestion. Protected — requires a valid JWT.
+    Stores job ownership in Redis so only the submitting user can query status.
+    """
+    try:
+        parser = DocumentParser()
+        logger.info(
+            "Downloading document",
+            extra={"document_url": req.document_url, "user_id": user.id},
+        )
+        file_path = parser.download_file(req.document_url)
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to download document from {req.document_url}",
+            )
+        task = process_document.delay(file_path, req.document_url)
+
+        # Record ownership before returning so the status endpoint can verify
+        await _set_job_owner(task.id, user.id)
+
+        logger.info(
+            "Document queued for ingestion",
+            extra={"job_id": task.id, "document_url": req.document_url, "user_id": user.id},
+        )
+        return DocumentUploadResponse(
+            job_id=task.id, status="pending", document_url=req.document_url
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error uploading document",
+            extra={"document_url": req.document_url, "user_id": user.id, "error": str(e)},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500, detail=f"Error uploading document: {str(e)}"
+        )
+
+
+@router.post("/api/v1/hackrx/upload-file", response_model=DocumentUploadResponse)
+async def upload_document_file(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> DocumentUploadResponse:
+    """
+    Async direct binary file ingestion via multipart/form-data.
+    Saves the file to temp_files/ and queues Celery processing.
+    """
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        temp_dir = os.path.join(project_root, "temp_files")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        filename = os.path.basename(file.filename or "uploaded_document.pdf")
+        file_path = os.path.join(temp_dir, f"{uuid.uuid4().hex[:8]}_{filename}")
+
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        from app.utils.document_parser import DocumentParser
+        doc_hash = DocumentParser().get_file_hash(file_path)
+        from app.tasks import KNOWN_DOCS_PATH
+        with open(os.path.join(KNOWN_DOCS_PATH, filename + ".hash"), "w") as f:
+            f.write(doc_hash)
+
+        task = process_document.delay(file_path, filename)
+        await _set_job_owner(task.id, user.id)
+
+        logger.info(
+            "Local file uploaded & queued for ingestion",
+            extra={"job_id": task.id, "file_name": filename, "user_id": user.id},
+        )
+        return DocumentUploadResponse(
+            job_id=task.id, status="pending", document_url=filename
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error uploading document file",
+            extra={"file_name": file.filename, "user_id": user.id, "error": str(e)},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500, detail=f"Error uploading document file: {str(e)}"
+        )
+
+
+@router.get("/api/v1/hackrx/jobs/{job_id}/status", response_model=JobStatus)
+async def get_job_status(
+    job_id: str,
+    user: AuthUser = Depends(get_current_user),
+) -> JobStatus:
+    """
+    Returns status for a Celery job.  Protected — requires a valid JWT.
+
+    Returns 403 if the requesting user is not the job owner.
+    Returns 404 if the job ownership record has expired (>24 h) — the user
+    should re-submit if needed.
+    """
+    owner_id = await _get_job_owner(job_id)
+
+    if owner_id is None:
+        # Ownership record expired or never written (e.g. pre-auth jobs)
+        # Treat as not found rather than leaking that the job exists.
+        raise HTTPException(status_code=404, detail="Job not found or has expired")
+
+    if owner_id != user.id:
+        logger.warning(
+            "Job ownership mismatch",
+            extra={"job_id": job_id, "owner": owner_id, "requester": user.id},
+        )
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    try:
+        task_result = celery_app.AsyncResult(job_id)
+        status   = task_result.status
+        result   = None
+        error    = None
+        progress = None
+
+        if status == "SUCCESS":
+            result = task_result.result
+        elif status == "FAILURE":
+            error = str(task_result.info)
+        elif status in ("STARTED", "PROGRESS"):
+            if hasattr(task_result, "info") and isinstance(task_result.info, dict):
+                progress = task_result.info
+
+        return JobStatus(
+            job_id=job_id, status=status, result=result, error=error, progress=progress
+        )
+    except Exception as e:
+        logger.error(
+            "Error retrieving job status",
+            extra={"job_id": job_id, "user_id": user.id, "error": str(e)},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving job status: {str(e)}"
+        )
