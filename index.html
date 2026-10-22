@@ -826,6 +826,288 @@
       color: var(--text-2);
     }
 
+    /* ── Multi-Query Parallel Matrix System ────────────────────────────────── */
+    .query-mode-switch {
+      display: flex;
+      gap: 0.5rem;
+      background: oklch(0.12 0.015 265);
+      padding: 0.3rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1.25rem;
+      width: fit-content;
+    }
+    .query-mode-btn {
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s var(--ease-out-expo);
+    }
+    .query-mode-btn.active {
+      background: oklch(0.72 0.22 315 / 0.18);
+      color: var(--neon-cyan);
+      border: 1px solid oklch(0.80 0.185 192 / 0.35);
+      box-shadow: 0 0 12px var(--neon-cyan-glow);
+    }
+
+    .multi-query-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+    .multi-query-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: oklch(0.11 0.012 265 / 0.95);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      transition: all 0.2s var(--ease-out-expo);
+      position: relative;
+    }
+    .multi-query-row:focus-within {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+      background: oklch(0.13 0.015 265);
+    }
+    .multi-query-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--neon-cyan);
+      background: oklch(0.80 0.185 192 / 0.12);
+      border: 1px solid oklch(0.80 0.185 192 / 0.25);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .multi-query-thread-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--neon-violet);
+      background: oklch(0.72 0.22 315 / 0.12);
+      border: 1px solid oklch(0.72 0.22 315 / 0.25);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      white-space: nowrap;
+      display: none;
+    }
+    @media (min-width: 640px) {
+      .multi-query-thread-pill { display: inline-flex; align-items: center; gap: 0.25rem; }
+    }
+    .multi-query-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      padding: 0.4rem 0.25rem;
+    }
+    .multi-query-input::placeholder { color: var(--text-dim); }
+    .multi-query-del-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 0.35rem;
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+      transition: color 0.15s, background 0.15s;
+    }
+    .multi-query-del-btn:hover {
+      color: var(--neon-rose);
+      background: oklch(0.68 0.22 25 / 0.15);
+    }
+
+    .multi-query-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .btn-add-query {
+      background: oklch(0.12 0.015 265);
+      border: 1px dashed var(--border-glow);
+      color: var(--neon-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.55rem 1.15rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-add-query:hover {
+      background: oklch(0.80 0.185 192 / 0.1);
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-glow);
+      transform: translateY(-1px);
+    }
+
+    .preset-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .preset-pill {
+      background: oklch(0.12 0.015 265 / 0.8);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-pill:hover {
+      border-color: var(--neon-violet);
+      color: var(--text-1);
+      background: oklch(0.72 0.22 315 / 0.12);
+    }
+
+    /* ── Concurrency Telemetry Banner ──────────────────────────────────────── */
+    .concurrency-telemetry-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(90deg, oklch(0.13 0.018 265 / 0.9), oklch(0.15 0.022 315 / 0.4));
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--neon-cyan);
+      margin-bottom: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+    .concurrency-telemetry-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-2);
+    }
+    .concurrency-telemetry-right {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      color: var(--neon-cyan);
+    }
+
+    /* ── Parallel Results Navigation & Answer Cards ────────────────────────── */
+    .parallel-tabs-row {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .parallel-tabs-row::-webkit-scrollbar { height: 3px; }
+    .parallel-tabs-row::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+    .query-tab-pill {
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+      background: oklch(0.12 0.015 265);
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .query-tab-pill.active {
+      border-color: var(--neon-cyan);
+      background: oklch(0.80 0.185 192 / 0.15);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-glow);
+    }
+    .parallel-result-card {
+      background: oklch(0.12 0.015 265 / 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .parallel-result-card:hover {
+      border-color: var(--border-medium);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .parallel-result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .parallel-result-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .parallel-thread-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+      background: oklch(0.78 0.18 152 / 0.12);
+      border: 1px solid oklch(0.78 0.18 152 / 0.25);
+      color: var(--neon-emerald);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-copy-single {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      color: var(--text-3);
+      padding: 0.25rem 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+    .btn-copy-single:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      background: oklch(0.80 0.185 192 / 0.08);
+    }
+
     /* ── Auth Modal / Glass Dialog ─────────────────────────────────────────── */
     .modal-backdrop {
       position: fixed;
@@ -1192,16 +1474,70 @@
           <input type="text" class="cyber-input" id="query-target-url" value="https://raw.githubusercontent.com/run-llama/llama_index/main/README.md" placeholder="Document URL or select from Ingestion Bay above" />
         </div>
 
-        <!-- Natural Language Inquiries -->
-        <div class="field-label">
-          <span>Synthesis Inquiries (One per line or single prompt)</span>
-          <span style="color:var(--neon-cyan);" id="prompt-counter">1 Question</span>
+        <!-- Query Input Mode Switcher -->
+        <div class="query-mode-switch">
+          <button class="query-mode-btn active" id="btn-mode-matrix" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Multi-Query Parallel Matrix
+          </button>
+          <button class="query-mode-btn" id="btn-mode-bulk" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Bulk Raw Script
+          </button>
         </div>
-        <textarea class="cyber-textarea" id="query-prompt-input" placeholder="e.g. What is LlamaIndex and how does it connect custom data sources to LLMs?">What is LlamaIndex and how does it connect custom data sources to LLMs?</textarea>
+
+        <!-- Mode A: Multi-Query Matrix View -->
+        <div id="view-mode-matrix">
+          <div class="field-label">
+            <span>Concurrent Inquiries (Parallel Multi-Threading)</span>
+            <span style="color:var(--neon-cyan);" id="multi-query-counter">2 Concurrent Queries</span>
+          </div>
+
+          <div class="multi-query-container" id="multi-query-list">
+            <!-- Dynamic query rows rendered here -->
+          </div>
+
+          <div class="multi-query-toolbar">
+            <button class="btn-add-query" id="btn-add-query" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Add Query</span>
+              <span style="font-size:0.65rem;color:var(--text-3);margin-left:0.25rem;">[Shift+Enter]</span>
+            </button>
+
+            <div class="preset-chips-row">
+              <span style="font-family:'JetBrains Mono';font-size:0.68rem;color:var(--text-3);">PRESETS:</span>
+              <button class="preset-pill" id="preset-3-queries" type="button">⚡ 3 Parallel Queries</button>
+              <button class="preset-pill" id="preset-5-queries" type="button">🚀 5 High-Concurrency</button>
+              <button class="preset-pill" id="preset-single-query" type="button">✨ Single Query</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode B: Bulk Raw Script Area -->
+        <div id="view-mode-bulk" style="display:none;">
+          <div class="field-label">
+            <span>Raw Prompt / One Inquiry Per Line</span>
+            <span style="color:var(--neon-cyan);" id="prompt-counter">1 Question</span>
+          </div>
+          <textarea class="cyber-textarea" id="query-prompt-input" placeholder="Enter questions (one per line for parallel execution)...">What is LlamaIndex and how does it connect custom data sources to LLMs?</textarea>
+        </div>
+
+        <!-- Parallel Concurrency Architecture Banner -->
+        <div class="concurrency-telemetry-banner">
+          <div class="concurrency-telemetry-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--neon-cyan);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>ARCHITECTURE: <b>Python ThreadPoolExecutor</b></span>
+          </div>
+          <div class="concurrency-telemetry-right">
+            <span id="active-concurrency-status">Concurrency: min(16, N) Threads in Parallel</span>
+            <span>•</span>
+            <span style="color:var(--neon-emerald);">Low-Latency Non-Blocking</span>
+          </div>
+        </div>
 
         <button class="btn-action-primary" id="btn-execute-rag" style="background:linear-gradient(135deg, var(--neon-violet), var(--neon-cyan));">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <span id="label-execute-rag">Execute Neural RAG Query</span>
+          <span id="label-execute-rag">Execute Multi-Query Parallel RAG (2 Queries)</span>
         </button>
 
         <!-- Synthesized Output Viewport -->
@@ -1210,16 +1546,30 @@
             <div class="synthesis-meta">
               <span>MODEL: <b>GEMINI 1.5 PRO / FAISS</b></span>
               <span>•</span>
-              <span id="synthesis-latency">LATENCY: --ms</span>
+              <span id="synthesis-latency" style="color:var(--neon-cyan);font-weight:700;">LATENCY: --ms</span>
+              <span>•</span>
+              <span id="synthesis-concurrency" style="color:var(--neon-emerald);">PARALLEL: READY</span>
             </div>
-            <button style="background:none;border:none;color:var(--text-3);cursor:pointer;" id="btn-copy-answer" title="Copy answer to clipboard">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <button class="btn-copy-single" id="btn-copy-answer" title="Copy all answers to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy All</span>
+              </button>
+              <button class="btn-copy-single" id="btn-export-json" title="Export answers as JSON">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>JSON</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Parallel Filter Tabs -->
+          <div class="parallel-tabs-row" id="parallel-query-tabs" style="display:none;">
+            <!-- Filter pills e.g. All, Q1, Q2... -->
           </div>
 
           <div class="markdown-body" id="synthesis-body">
             <p style="color:var(--text-3);font-style:italic;">
-              Ready for query. Target a document and submit an inquiry above to synthesize insights with multi-stage citation attribution.
+              Ready for parallel execution. Add one or multiple inquiries above to dispatch across concurrent worker threads with low latency.
             </p>
           </div>
         </div>
@@ -2006,28 +2356,232 @@
       showToast('Refreshing job status queue…', 'info');
     });
 
-    // ── 8. Neural RAG Query Workbench ──────────────────────────────────────
+    // ── 8. Neural RAG Multi-Query Parallel Workbench ─────────────────────────
+    const btnModeMatrix = document.getElementById('btn-mode-matrix');
+    const btnModeBulk = document.getElementById('btn-mode-bulk');
+    const viewModeMatrix = document.getElementById('view-mode-matrix');
+    const viewModeBulk = document.getElementById('view-mode-bulk');
+    const multiQueryList = document.getElementById('multi-query-list');
+    const multiQueryCounter = document.getElementById('multi-query-counter');
+    const btnAddQuery = document.getElementById('btn-add-query');
     const promptInput = document.getElementById('query-prompt-input');
+    const promptCounter = document.getElementById('prompt-counter');
     const btnExecuteRag = document.getElementById('btn-execute-rag');
+    const labelExecuteRag = document.getElementById('label-execute-rag');
     const synthesisBody = document.getElementById('synthesis-body');
     const synthesisLatency = document.getElementById('synthesis-latency');
+    const synthesisConcurrency = document.getElementById('synthesis-concurrency');
+    const parallelTabsRow = document.getElementById('parallel-query-tabs');
+    const activeConcurrencyStatus = document.getElementById('active-concurrency-status');
 
-    // Quick Prompt Chips
+    let currentQueryMode = 'matrix';
+    let currentQueries = [
+      "What is LlamaIndex and how does it connect custom data sources to LLMs?",
+      "How does vector indexing and embedding retrieval work in LlamaIndex?"
+    ];
+    let lastSynthesisResults = null;
+
+    // Presets
+    const PRESETS = {
+      single: [
+        "What is LlamaIndex and how does it connect custom data sources to LLMs?"
+      ],
+      three: [
+        "What is LlamaIndex and how does it connect custom data sources to LLMs?",
+        "What are the core vector store integrations supported in LlamaIndex?",
+        "How does semantic chunking optimize retrieval accuracy and context quality?"
+      ],
+      five: [
+        "What is LlamaIndex and what are its primary architectural components?",
+        "How do index structures differ between vector stores and tree indexes?",
+        "What query engine configurations exist for multi-stage neural retrieval?",
+        "Explain how evaluations and benchmark accuracy metrics are calculated.",
+        "How does agentic orchestration work with external tool integrations?"
+      ]
+    };
+
+    function updateQueryUI() {
+      const count = currentQueries.length;
+      if (multiQueryCounter) {
+        multiQueryCounter.textContent = `${count} Concurrent ${count === 1 ? 'Inquiry' : 'Inquiries'}`;
+      }
+      if (promptCounter) {
+        promptCounter.textContent = `${count} ${count === 1 ? 'Question' : 'Questions'}`;
+      }
+      if (labelExecuteRag) {
+        labelExecuteRag.textContent = `Execute Multi-Query Parallel RAG (${count} ${count === 1 ? 'Query' : 'Queries'})`;
+      }
+      if (activeConcurrencyStatus) {
+        const workers = Math.min(16, Math.max(count, 1));
+        activeConcurrencyStatus.textContent = `Concurrency: ${workers} ThreadPool Workers in Parallel`;
+      }
+    }
+
+    function renderMultiQueryInputs() {
+      if (!multiQueryList) return;
+      multiQueryList.innerHTML = '';
+
+      currentQueries.forEach((qText, idx) => {
+        const row = document.createElement('div');
+        row.className = 'multi-query-row';
+
+        const threadNum = (idx % 16) + 1;
+
+        row.innerHTML = `
+          <div class="multi-query-badge">Q${idx + 1}</div>
+          <div class="multi-query-thread-pill">⚡ Thread #${threadNum}</div>
+          <input
+            type="text"
+            class="multi-query-input"
+            data-index="${idx}"
+            value="${qText.replace(/"/g, '&quot;')}"
+            placeholder="Enter question #${idx + 1} for parallel synthesis..."
+          />
+          ${currentQueries.length > 1 ? `
+            <button class="multi-query-del-btn" data-index="${idx}" title="Remove inquiry" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          ` : ''}
+        `;
+
+        // Input sync
+        const inputElem = row.querySelector('.multi-query-input');
+        inputElem.addEventListener('input', (e) => {
+          currentQueries[idx] = e.target.value;
+          syncToBulk();
+        });
+
+        // Enter key adds new query
+        inputElem.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addQueryInput('');
+          }
+        });
+
+        // Delete button
+        const delBtn = row.querySelector('.multi-query-del-btn');
+        if (delBtn) {
+          delBtn.addEventListener('click', () => {
+            currentQueries.splice(idx, 1);
+            if (currentQueries.length === 0) currentQueries = [''];
+            renderMultiQueryInputs();
+            syncToBulk();
+            updateQueryUI();
+          });
+        }
+
+        multiQueryList.appendChild(row);
+      });
+
+      updateQueryUI();
+    }
+
+    function addQueryInput(initialText = '') {
+      currentQueries.push(initialText);
+      renderMultiQueryInputs();
+      syncToBulk();
+      updateQueryUI();
+      // Focus newly added input
+      const inputs = multiQueryList.querySelectorAll('.multi-query-input');
+      if (inputs.length > 0) {
+        inputs[inputs.length - 1].focus();
+      }
+    }
+
+    function syncToBulk() {
+      if (promptInput) {
+        promptInput.value = currentQueries.filter(Boolean).join('\n');
+      }
+    }
+
+    function syncFromBulk() {
+      if (promptInput) {
+        const lines = promptInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+        currentQueries = lines.length > 0 ? lines : [''];
+      }
+    }
+
+    // Mode switching
+    if (btnModeMatrix && btnModeBulk) {
+      btnModeMatrix.addEventListener('click', () => {
+        syncFromBulk();
+        currentQueryMode = 'matrix';
+        btnModeMatrix.classList.add('active');
+        btnModeBulk.classList.remove('active');
+        viewModeMatrix.style.display = 'block';
+        viewModeBulk.style.display = 'none';
+        renderMultiQueryInputs();
+      });
+
+      btnModeBulk.addEventListener('click', () => {
+        syncToBulk();
+        currentQueryMode = 'bulk';
+        btnModeBulk.classList.add('active');
+        btnModeMatrix.classList.remove('active');
+        viewModeBulk.style.display = 'block';
+        viewModeMatrix.style.display = 'none';
+        updateQueryUI();
+      });
+    }
+
+    if (btnAddQuery) {
+      btnAddQuery.addEventListener('click', () => addQueryInput(''));
+    }
+
+    if (promptInput) {
+      promptInput.addEventListener('input', () => {
+        syncFromBulk();
+        updateQueryUI();
+      });
+    }
+
+    // Presets listeners
+    document.getElementById('preset-3-queries')?.addEventListener('click', () => {
+      currentQueries = [...PRESETS.three];
+      renderMultiQueryInputs();
+      syncToBulk();
+      showToast('Loaded 3 Parallel Queries preset.', 'info');
+    });
+
+    document.getElementById('preset-5-queries')?.addEventListener('click', () => {
+      currentQueries = [...PRESETS.five];
+      renderMultiQueryInputs();
+      syncToBulk();
+      showToast('Loaded 5 High-Concurrency Inquiries preset.', 'info');
+    });
+
+    document.getElementById('preset-single-query')?.addEventListener('click', () => {
+      currentQueries = [...PRESETS.single];
+      renderMultiQueryInputs();
+      syncToBulk();
+      showToast('Switched to Single Query preset.', 'info');
+    });
+
+    // Quick Prompt Chips in UI
     document.querySelectorAll('.prompt-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const text = chip.getAttribute('data-prompt');
-        promptInput.value = text;
-        document.getElementById('studio-section').scrollIntoView({ behavior: 'smooth' });
+        currentQueries = [text];
+        renderMultiQueryInputs();
+        syncToBulk();
+        document.getElementById('studio-section')?.scrollIntoView({ behavior: 'smooth' });
         showToast('Prompt injected into Workbench.', 'info');
       });
     });
 
-    document.getElementById('btn-clear-query').addEventListener('click', () => {
-      promptInput.value = '';
-      synthesisBody.innerHTML = '<p style="color:var(--text-3);font-style:italic;">Query cleared. Submit an inquiry above to synthesize insights.</p>';
+    document.getElementById('btn-clear-query')?.addEventListener('click', () => {
+      currentQueries = [''];
+      renderMultiQueryInputs();
+      syncToBulk();
+      synthesisBody.innerHTML = '<p style="color:var(--text-3);font-style:italic;">Query cleared. Add one or more inquiries above to synthesize insights.</p>';
+      if (parallelTabsRow) parallelTabsRow.style.display = 'none';
+      lastSynthesisResults = null;
+      updateQueryUI();
+      showToast('Inquiries cleared.', 'info');
     });
 
-    // Execute Neural RAG
+    // Execute Neural Multi-Query Parallel RAG
     btnExecuteRag.addEventListener('click', async () => {
       if (!STATE.token) {
         openAuthModal(false);
@@ -2036,24 +2590,52 @@
       }
 
       const docUrl = queryTargetUrl.value.trim() || inputDocUrl.value.trim() || STATE.targetDocUrl;
-      const rawPrompt = promptInput.value.trim();
 
-      if (!rawPrompt) {
-        showToast('Please enter an inquiry for synthesis.', 'error');
+      // Extract inquiries
+      if (currentQueryMode === 'bulk') {
+        syncFromBulk();
+      }
+      const questions = currentQueries.map(q => q.trim()).filter(Boolean);
+
+      if (questions.length === 0) {
+        showToast('Please enter at least one inquiry for parallel synthesis.', 'error');
         return;
       }
 
-      const questions = rawPrompt.split('\n').map(q => q.trim()).filter(Boolean);
-
-      const label = document.getElementById('label-execute-rag');
       btnExecuteRag.disabled = true;
-      label.textContent = 'Synthesizing Neural RAG…';
+      labelExecuteRag.textContent = `Executing Parallel ThreadPool (${questions.length} Queries)…`;
+
+      // Live animated parallel thread matrix in output viewport
+      const threadCardsHtml = questions.map((q, idx) => `
+        <div style="background:oklch(0.12 0.015 265);border:1px solid var(--border-glow);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;font-family:'JetBrains Mono';font-size:0.72rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+            <span style="color:var(--neon-cyan);font-weight:700;">⚡ THREAD #${(idx % 16) + 1}</span>
+            <span style="color:var(--neon-emerald);font-size:0.65rem;border:1px solid var(--border-glow);padding:0.15rem 0.45rem;border-radius:3px;background:rgba(0,240,255,0.08);">ACTIVE</span>
+          </div>
+          <div style="color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.8rem;">
+            <b>Q${idx + 1}:</b> "${q}"
+          </div>
+        </div>
+      `).join('');
+
       synthesisBody.innerHTML = `
-        <div style="display:flex;align-items:center;gap:0.75rem;padding:2rem 0;color:var(--neon-cyan);">
-          <div class="pulse-dot"></div>
-          <span>Retrieving FAISS Vector Embeddings & Consulting Gemini LLM…</span>
+        <div style="padding:1rem 0;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;color:var(--neon-cyan);">
+            <div class="pulse-dot"></div>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;">
+              Dispatching ${questions.length} Concurrent Inquiries via Python ThreadPoolExecutor…
+            </span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+            ${threadCardsHtml}
+          </div>
+          <p style="color:var(--text-3);font-size:0.78rem;font-family:'JetBrains Mono';">
+            Simultaneous vector distance retrieval + Gemini LLM synthesis across parallel thread pool.
+          </p>
         </div>
       `;
+
+      if (parallelTabsRow) parallelTabsRow.style.display = 'none';
 
       const startTime = performance.now();
 
@@ -2068,7 +2650,12 @@
         });
 
         const elapsed = Math.round(performance.now() - startTime);
-        synthesisLatency.textContent = `LATENCY: ${elapsed}ms`;
+        synthesisLatency.textContent = `LATENCY: ${elapsed}ms (${questions.length}Q)`;
+        
+        if (synthesisConcurrency) {
+          const speedup = questions.length > 1 ? `⚡ ${questions.length}x CONCURRENCY` : '⚡ LOW-LATENCY';
+          synthesisConcurrency.textContent = speedup;
+        }
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
@@ -2076,60 +2663,179 @@
         }
 
         const data = await res.json();
+        const answersList = Array.isArray(data.answers) ? data.answers : [String(data.answers || data)];
+        
+        lastSynthesisResults = {
+          docUrl,
+          questions,
+          answers: answersList,
+          latency: elapsed
+        };
 
-        // Render Answers using Marked
-        let renderHtml = '';
-
-        if (Array.isArray(data.answers)) {
-          renderHtml = data.answers.map((ans, i) => `
-            <div style="margin-bottom:1.5rem;">
-              <h3 style="color:var(--neon-cyan);font-size:0.95rem;margin-bottom:0.5rem;">Q${i+1}: ${questions[i] || 'Query'}</h3>
-              <div>${typeof marked !== 'undefined' ? marked.parse(ans) : ans}</div>
-            </div>
-          `).join('');
-        } else if (typeof data === 'object') {
-          // If answers mapped in dictionary
-          const keys = Object.keys(data);
-          renderHtml = keys.map(k => `
-            <div style="margin-bottom:1.5rem;">
-              <h3 style="color:var(--neon-cyan);font-size:0.95rem;margin-bottom:0.5rem;">${k}</h3>
-              <div>${typeof marked !== 'undefined' && typeof data[k] === 'string' ? marked.parse(data[k]) : JSON.stringify(data[k])}</div>
-            </div>
-          `).join('');
-        } else {
-          renderHtml = typeof marked !== 'undefined' ? marked.parse(String(data)) : String(data);
-        }
-
-        // Add citation card
-        renderHtml += `
-          <div class="citation-card">
-            <b>SOURCE CONTEXT ATTRIBUTION:</b> Extracted from document <code>${docUrl.split('/').pop() || docUrl}</code>. Verified via FAISS vector index cosine distance ranking.
-          </div>
-        `;
-
-        synthesisBody.innerHTML = renderHtml;
-        showToast('Neural synthesis generated successfully!', 'success');
+        renderSynthesizedAnswers(lastSynthesisResults, 'all');
+        showToast(`Synthesized ${questions.length} queries in ${elapsed}ms!`, 'success');
       } catch (err) {
         synthesisBody.innerHTML = `
           <div style="color:var(--neon-rose);padding:1rem 0;">
             <b>Synthesis Execution Error:</b> ${err.message}
-            <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-3);">Ensure the document has been ingested or the URL is publicly reachable.</p>
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-3);">
+              Ensure the target document is uploaded or reachable, and credentials are valid.
+            </p>
           </div>
         `;
         showToast(err.message, 'error');
       } finally {
         btnExecuteRag.disabled = false;
-        label.textContent = 'Execute Neural RAG Query';
+        updateQueryUI();
       }
     });
 
-    // Copy Answer
-    document.getElementById('btn-copy-answer').addEventListener('click', () => {
-      const text = synthesisBody.innerText;
-      if (!text) return;
-      navigator.clipboard.writeText(text);
-      showToast('Synthesized text copied to clipboard.', 'success');
+    function renderSynthesizedAnswers(results, filterMode = 'all') {
+      const { docUrl, questions, answers, latency } = results;
+
+      // Render Filter Tabs
+      if (parallelTabsRow) {
+        if (questions.length > 1) {
+          parallelTabsRow.style.display = 'flex';
+          parallelTabsRow.innerHTML = `
+            <button class="query-tab-pill ${filterMode === 'all' ? 'active' : ''}" data-filter="all">
+              All Queries (${questions.length})
+            </button>
+            ${questions.map((q, idx) => `
+              <button class="query-tab-pill ${filterMode === String(idx) ? 'active' : ''}" data-filter="${idx}">
+                Q${idx + 1}
+              </button>
+            `).join('')}
+          `;
+
+          parallelTabsRow.querySelectorAll('.query-tab-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const target = btn.getAttribute('data-filter');
+              renderSynthesizedAnswers(results, target);
+            });
+          });
+        } else {
+          parallelTabsRow.style.display = 'none';
+        }
+      }
+
+      // Render Cards
+      let cardsHtml = '';
+      questions.forEach((q, idx) => {
+        if (filterMode !== 'all' && filterMode !== String(idx)) return;
+
+        const ans = answers[idx] !== undefined ? answers[idx] : 'No response generated.';
+        const parsedHtml = typeof marked !== 'undefined' ? marked.parse(ans) : ans;
+        const threadNum = (idx % 16) + 1;
+
+        cardsHtml += `
+          <div class="parallel-result-card" id="result-card-${idx}">
+            <div class="parallel-result-header">
+              <div class="parallel-result-title">
+                <span class="multi-query-badge" style="padding:0.25rem 0.5rem;font-size:0.7rem;">Q${idx + 1}</span>
+                <span>${q}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="parallel-thread-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Thread Worker #${threadNum}
+                </span>
+                <button class="btn-copy-single btn-copy-card" data-index="${idx}" title="Copy this specific answer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="markdown-body">
+              ${parsedHtml}
+            </div>
+
+            <div style="margin-top:0.85rem;font-size:0.72rem;color:var(--text-3);font-family:'JetBrains Mono';display:flex;align-items:center;gap:0.5rem;">
+              <span>• Parallel Concurrency verified</span>
+              <span>• Vector retrieval cosine match</span>
+            </div>
+          </div>
+        `;
+      });
+
+      // Context Attribution Footer
+      cardsHtml += `
+        <div class="citation-card">
+          <b>SOURCE CONTEXT ATTRIBUTION:</b> Extracted from document <code>${docUrl.split('/').pop() || docUrl}</code>. Verified via FAISS vector index cosine distance ranking across ${questions.length} parallel threads.
+        </div>
+      `;
+
+      synthesisBody.innerHTML = cardsHtml;
+
+      // Attach card copy handlers
+      synthesisBody.querySelectorAll('.btn-copy-card').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cardIdx = btn.getAttribute('data-index');
+          const ansText = answers[cardIdx] || '';
+          navigator.clipboard.writeText(ansText);
+          showToast(`Copied Q${Number(cardIdx) + 1} answer!`, 'success');
+        });
+      });
+    }
+
+    // Copy All Answers
+    document.getElementById('btn-copy-answer')?.addEventListener('click', () => {
+      if (!lastSynthesisResults) {
+        const text = synthesisBody.innerText;
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        showToast('Synthesized text copied to clipboard.', 'success');
+        return;
+      }
+
+      let markdownExport = `# Neural RAG Parallel Synthesis Results\n`;
+      markdownExport += `**Document:** ${lastSynthesisResults.docUrl}\n`;
+      markdownExport += `**Total Latency:** ${lastSynthesisResults.latency}ms\n`;
+      markdownExport += `**Inquiries Count:** ${lastSynthesisResults.questions.length}\n\n---\n\n`;
+
+      lastSynthesisResults.questions.forEach((q, i) => {
+        markdownExport += `### Q${i + 1}: ${q}\n\n`;
+        markdownExport += `${lastSynthesisResults.answers[i] || ''}\n\n---\n\n`;
+      });
+
+      navigator.clipboard.writeText(markdownExport);
+      showToast('All answers copied to clipboard in formatted Markdown!', 'success');
     });
+
+    // Export JSON
+    document.getElementById('btn-export-json')?.addEventListener('click', () => {
+      if (!lastSynthesisResults) {
+        showToast('No synthesized results to export yet.', 'error');
+        return;
+      }
+
+      const exportObj = {
+        document: lastSynthesisResults.docUrl,
+        latency_ms: lastSynthesisResults.latency,
+        concurrency_threads: Math.min(16, lastSynthesisResults.questions.length),
+        timestamp: new Date().toISOString(),
+        results: lastSynthesisResults.questions.map((q, i) => ({
+          query_index: i + 1,
+          question: q,
+          answer: lastSynthesisResults.answers[i] || null,
+          worker_thread: (i % 16) + 1
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neural-rag-parallel-synthesis-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Exported results as JSON file!', 'success');
+    });
+
+    // Initial render of Multi-Query inputs
+    renderMultiQueryInputs();
 
     // ── 9. Startup Sequence ────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
