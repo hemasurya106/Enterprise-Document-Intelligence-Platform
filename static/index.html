@@ -1640,9 +1640,11 @@
     'use strict';
 
     // ── 1. Configuration & State ───────────────────────────────────────────
-    // Primary backend URL: Render Cloud deployment as specified by user
+    // Primary backend URL: Auto-detect localhost or fallback to Render Cloud deployment
     const RENDER_BACKEND_URL = 'https://docintel-platform-d6xm.onrender.com';
-    let API_BASE = RENDER_BACKEND_URL;
+    const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '8000';
+    const savedApiBase = localStorage.getItem('docintel_api_base');
+    let API_BASE = savedApiBase || (isLocalHost ? (window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:8000') : RENDER_BACKEND_URL);
 
     function getApiUrl(endpoint) {
       if (!endpoint) return API_BASE;
@@ -1906,9 +1908,11 @@
       btnToggleBackend.addEventListener('click', () => {
         if (API_BASE === RENDER_BACKEND_URL) {
           API_BASE = 'http://localhost:8000';
+          localStorage.setItem('docintel_api_base', API_BASE);
           showToast('Switched API target to Localhost (http://localhost:8000)', 'info');
         } else {
           API_BASE = RENDER_BACKEND_URL;
+          localStorage.setItem('docintel_api_base', API_BASE);
           showToast('Switched API target to Render Cloud', 'info');
         }
         pingClusterTelemetry();
@@ -2265,13 +2269,14 @@
           const res = await authedFetch(`/api/v1/hackrx/jobs/${jobId}/status`);
           if (!res.ok) {
             pollFailCount++;
-            if (pollFailCount >= 4) {
+            if (pollFailCount >= 6) {
               clearInterval(pollTimer);
               const job = STATE.jobs.find(j => j.job_id === jobId);
-              if (job && job.status === 'PENDING') {
-                job.status = 'QUEUED';
-                job.stage = 'Awaiting worker execution';
+              if (job) {
+                job.status = 'FAILURE';
+                job.stage = res.status === 502 ? 'Remote Backend 502 (OOM/Timeout)' : `HTTP Error ${res.status}`;
                 renderJobs();
+                showToast(`Job ${jobId.substring(0, 8)} stopped: Backend returned HTTP ${res.status}. If using Render free tier, switch to LOCAL:8000.`, 'error', 7000);
               }
             }
             return;
