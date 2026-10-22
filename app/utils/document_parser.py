@@ -128,7 +128,14 @@ class DocumentParser:
                 ocr_text = pytesseract.image_to_string(img_pil, config=self.ocr_config)
             except Exception as e:
                 print(f'Tesseract error on image {img_index + 1} on page {page_num + 1}: {e}')
-        gemini_text = extract_text_with_gemini_vision(img_data, ocr_text)
+        
+        gemini_text = ''
+        if os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_AI_API_KEY"):
+            try:
+                gemini_text = extract_text_with_gemini_vision(img_data, ocr_text)
+            except Exception as e:
+                print(f'Vision OCR error on image {img_index + 1}: {e}')
+                
         combined = _format_combined_ocr_output(ocr_text, gemini_text)
         return (page_num, img_index, combined)
 
@@ -136,22 +143,44 @@ class DocumentParser:
         text_content = ''
         tables_data = []
         image_jobs: List[Tuple[int, int, bytes]] = []
+        MAX_OCR_IMAGES = 12
+
         with fitz.open(file_path) as doc:
             for page_num, page in enumerate(doc):
                 page_text = page.get_text()
                 text_content += f'\n--- Page {page_num + 1} ---\n{page_text}\n'
+                has_native_text = len(page_text.strip()) > 60
+
+                if len(image_jobs) >= MAX_OCR_IMAGES:
+                    continue
+
                 for img_index, img in enumerate(page.get_images()):
                     try:
                         xref = img[0]
                         pix = fitz.Pixmap(doc, xref)
+
+                        # Filter out tiny icons, decorative bullets, separator bars
+                        if pix.width < 120 or pix.height < 80:
+                            pix = None
+                            continue
+
+                        # If page already has rich digital text, only scan large diagrams or scans
+                        if has_native_text and (pix.width < 280 or pix.height < 180):
+                            pix = None
+                            continue
+
                         if pix.n - pix.alpha < 4:
                             img_data = pix.tobytes('png')
                             image_jobs.append((page_num, img_index, img_data))
+                            if len(image_jobs) >= MAX_OCR_IMAGES:
+                                pix = None
+                                break
                         pix = None
                     except Exception as e:
                         print(f'Error extracting image {img_index} on page {page_num + 1}: {e}')
+
         if image_jobs:
-            max_workers = min(8, len(image_jobs))
+            max_workers = min(6, len(image_jobs))
             ocr_results: List[Tuple[int, int, str]] = []
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [executor.submit(self._ocr_pdf_image, page_num, img_index, img_data) for page_num, img_index, img_data in image_jobs]
