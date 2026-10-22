@@ -18,21 +18,22 @@ def process_question(args):
     question, chunks, index_data, embeddings = args
     print(f"Generating step-back query for: '{question}'")
     step_back_query = generate_step_back_query(question)
-    print(f"  -> Step-back query: '{step_back_query}'")
     all_relevant_chunks = set()
     original_chunks = retrieve_relevant_chunks(question, chunks, index_data, embeddings, top_k=3)
     for chunk in original_chunks:
         all_relevant_chunks.add(chunk)
-    step_back_chunks = retrieve_relevant_chunks(step_back_query, chunks, index_data, embeddings, top_k=3)
-    for chunk in step_back_chunks:
-        all_relevant_chunks.add(chunk)
+    if step_back_query and step_back_query != question:
+        step_back_chunks = retrieve_relevant_chunks(step_back_query, chunks, index_data, embeddings, top_k=3)
+        for chunk in step_back_chunks:
+            all_relevant_chunks.add(chunk)
     context = '\n\n---\n\n'.join(list(all_relevant_chunks))
+    if not context and chunks:
+        context = '\n\n---\n\n'.join(chunks[:min(4, len(chunks))])
     if not context:
         return 'Could not find relevant information in the document to answer the question.'
     answer = generate_response_with_context(question, context)
     answer = summarize_text(answer, question)
-    answer = answer.lstrip('```')
-    answer = answer.rstrip('```')
+    answer = answer.lstrip('```').rstrip('```')
     return answer
 
 def run_pipeline(document_url: str, questions: list[str]) -> dict:
@@ -74,7 +75,11 @@ def run_pipeline(document_url: str, questions: list[str]) -> dict:
             print(f'Known document detected (hash: {doc_hash}). Loading pre-processed assets.')
             with open(os.path.join(known_doc_path, 'chunks.json'), 'r', encoding='utf-8') as f:
                 chunks = json.load(f)
-            index_data = faiss.read_index(os.path.join(known_doc_path, 'index.faiss'))
+            try:
+                index_data = faiss.read_index(os.path.join(known_doc_path, 'index.faiss'))
+            except Exception as e:
+                print(f'FAISS read_index failed ({e}), using lexical chunk retrieval.')
+                index_data = None
         else:
             print(f'Unknown document (hash: {doc_hash}, url: {document_url}).')
             print(file_path)
