@@ -1906,16 +1906,19 @@
     const btnToggleBackend = document.getElementById('btn-toggle-backend');
     if (btnToggleBackend) {
       btnToggleBackend.addEventListener('click', () => {
+        const valBackend = document.getElementById('val-backend');
         if (API_BASE === RENDER_BACKEND_URL) {
           API_BASE = 'http://localhost:8000';
           localStorage.setItem('docintel_api_base', API_BASE);
           showToast('Switched API target to Localhost (http://localhost:8000)', 'info');
+          if (valBackend) { valBackend.textContent = 'LOCAL:8000'; valBackend.style.color = 'var(--neon-emerald)'; }
         } else {
           API_BASE = RENDER_BACKEND_URL;
           localStorage.setItem('docintel_api_base', API_BASE);
           showToast('Switched API target to Render Cloud', 'info');
+          if (valBackend) { valBackend.textContent = 'RENDER CLOUD'; valBackend.style.color = 'var(--neon-cyan)'; }
         }
-        pingClusterTelemetry();
+        queryClusterTelemetry();
       });
     }
 
